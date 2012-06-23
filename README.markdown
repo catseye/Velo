@@ -13,6 +13,8 @@ Falderal format.  The design of Velo is still somewhat inchoate,
 so do not expect all of these examples to be perfectly consistent
 or even necessarily feasible.
 
+    -> Tests for functionality "Interpret Velo Script"
+
 First, the ubiquitous "Hello, world!":
 
     | extend {IO}
@@ -59,9 +61,8 @@ can't predict what it will be until you evaluate the surrounding code,
 that you necessarily take a performance hit.
 
     | extend {IO}
-    | a = input;
+    | a = {7}.concat {>}.concat {5}
     | a.if {print {Yes}}, {print {No}}
-    + 5 > 4
     = Yes
 
 Scripts as Classes

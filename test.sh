@@ -1,3 +1,3 @@
 #!/bin/sh
 
-falderal test tests/config/Velo.markdown README.markdown
+cd src && falderal test ../tests/config/Velo.markdown ../README.markdown

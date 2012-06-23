@@ -93,7 +93,33 @@ class:
     = Sure
 
 Our demonstrations above show that a class has a "body" of code which
-is run when it is instantiated (just like a script.)
+is run when it is instantiated by a call to its `new` method -- more
+or less, just like a script.  No particular constructor method is needed,
+as the code inside the class can take care of initializing the instance.
+
+Note that this differs from how code like this is handled in Ruby; in
+that language, the code inside the class is executed when the class is
+defined.  In Velo, it is only run when the class is instantiated.
+
+    | Jonkers = {
+    |   extend {IO}
+    |   print {Sure}
+    | }.class;
+    | Jonkers.new;
+    | Jonkers.new;
+    = Sure
+    = Sure
+
+    | extend {IO}
+    | Jonkers = {
+    |   Fordible = {
+    |     extend {IO}
+    |     print {Sure}
+    |   }.class;
+    |   Fordible.new;
+    | }.class;
+    | print {Done}
+    = Done
 
 Aside on Syntax
 ---------------
@@ -177,9 +203,8 @@ and can be a string variable.
     | Jonkers.new;
     = What?
 
-As you've seen, a class can be instantiated by calling its `new` method.
-The code inside the class runs on the new instance when this happens,
-meaning no particular constructor method is needed.
+    | {extend {IO} print {Yes!}}.class.new;
+    = Yes!
 
 Delegation
 ----------
@@ -188,7 +213,7 @@ We've been talking about classes as if they were a distinct language
 construct, but really, a class is just a relationship between objects.
 
 Velo uses prototype-based object-orientation.  Each object has a list
-of parent objects; these are its classes.
+of parent objects; these are its classes.  But they're just objects.
 
 When a method is called on an object, if that method is not defined
 on that object, its parent objects are checked for that method; if any
@@ -219,9 +244,6 @@ In fact, `extend` is itself a method on `Object`.  When it is executed,
 it evaluates its string parameter to obtain an object, and adds that
 object to the list of parent objects of the current object.
 
-This all means that Velo supports prototype-based object-orientation
-(i.e. using delegation) and multiple inheritance.
-
 Since scripts are no different from classes, a script can `extend`
 a class that it defines:
 
@@ -243,6 +265,10 @@ The block given to `extend` is just a string, of course.
 
 Multiple Inheritance
 --------------------
+
+Because `extend` can be called as many times as you like on an
+object, an object can inherit from (delegate to) as many classes
+as you like.
 
 For multiple inheritance, the method resolution order follows the
 source code order; the objects added as parent objects by more

@@ -1,6 +1,8 @@
-puts "loading scanner"
+require 'velo/debug.rb'
 
-class Tokenizer
+debug "loading scanner"
+
+class Scanner
   def initialize s
     @string = s
     @text = nil
@@ -19,24 +21,27 @@ class Tokenizer
   def set_token(text, type)
     @text = text
     @type = type
+    debug "set_token '#{@text}' (#{@type})"
+    # debug "string now '#{@string}'"
   end
 
   def scan
     scan_impl
+    debug "scanned '#{@text}' (#{@type})"
     return @text
   end
 
   def scan_impl
-    m = /^\s+(.*?)$/.match @string
+    m = /^\s+(.*)$/m.match @string
     @string = m[1] if not m.nil?
 
     if @string.empty?
-      set_token(nil, nil)
+      set_token('EOF', 'EOF')
       return
     end
 
     # check for any single character tokens
-    m = /^([(),.;=])(.*?)$/.match @string
+    m = /^([(),.;=])(.*)$/m.match @string
     if m
       @string = m[2]
       set_token(m[1], 'seperator')
@@ -44,7 +49,7 @@ class Tokenizer
     end
 
     # check for strings of "word" characters
-    m = /^(\w+)(.*?)$/.match @string
+    m = /^(\w+)(.*)$/m.match @string
     if m
       @string = m[2]
       set_token(m[1], 'ident')
@@ -52,13 +57,13 @@ class Tokenizer
     end
 
     # literal strings
-    if @string[0] == '{'
+    if @string[0] == ?{
       index = 1
       level = 1
       while level > 0
-        if @string[index] == '{'
+        if @string[index] == ?{
           level += 1
-        elsif @string[index] == '}'
+        elsif @string[index] == ?}
           level -= 1
         end
         index += 1
@@ -69,7 +74,9 @@ class Tokenizer
       return
     end
 
-    set_token(nil, nil)
+    debug "scanner couldn't scan '#{@string}'"
+
+    set_token('UNKNOWN', 'UNKNOWN')
   end
 
   def consume s
@@ -87,5 +94,13 @@ class Tokenizer
     else
       raise VeloSyntaxError, "expected '#{s}', found '#{@text}'"
     end
+  end
+end
+
+if $0 == __FILE__
+  $debug = true
+  s = Scanner.new(ARGV[0])
+  until s.text.nil?
+    s.scan
   end
 end

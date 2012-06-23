@@ -1,0 +1,3 @@
+extend {IO}
+a = {Hello, world!}
+print a

@@ -1,7 +1,9 @@
+require 'velo/debug.rb'
+
 require 'velo/scanner.rb'
 require 'velo/ast.rb'
 
-puts "loading parser"
+debug "loading parser"
 
 class VeloSyntaxError < StandardError  
 end
@@ -28,7 +30,7 @@ end
 
 class Parser
   def initialize s
-    @tokenizer = Tokenizer.new(s)
+    @scanner = Scanner.new(s)
   end
 
 # Expr ::= Name [Rest]
@@ -37,6 +39,7 @@ class Parser
 # Rest ::= {"." Name} (";" | Expr {"," Expr})
 
   def script
+    debug "parsing Script production"
     exprs = []
     e = expr
     while not e.nil?
@@ -47,24 +50,44 @@ class Parser
   end
 
   def expr
-    if @tokenizer.consume "("
+    debug "parsing Expr production"
+    if @scanner.type == 'EOF'
+      return nil
+    elsif @scanner.consume "("
+      debug "parsing parens"
       e = expr
-      @tokenizer.expect ")"
+      @scanner.expect ")"
       # [Rest]
       return e
-    elsif @tokenizer.type == 'strlit'
-      s = @tokenizer.text
-      @tokenizer.scan
+    elsif @scanner.type == 'strlit'
+      debug "parsing strlit"
+      s = @scanner.text
+      @scanner.scan
       # [Rest]
-      return StringLiteral(s)
-    elsif @tokenizer.type == 'ident'
-      ident = @tokenizer.text
-      @tokenizer.scan
-      if @tokenizer.consume "="
-        return Assignment(ident, expr)
+      return StringLiteral.new(s)
+    elsif @scanner.type == 'ident'
+      debug "parsing ident"
+      ident = @scanner.text
+      @scanner.scan
+      if @scanner.consume "="
+        debug "parsing assignment"
+        return Assignment.new(ident, expr)
+      end
+      # parse arguments -- should be in Rest
+      if @scanner.consume ";"
+        # no arguments
+      else
+        args = []
+        e = expr
+        args.push(e) unless e.nil?
+        while @scanner.consume ","
+          e = expr
+          args.push(e) unless e.nil?
+        end
+        return MethodCall.new(ident, args)
       end
     else
-      raise VeloSyntaxError, "unexpected '#{@tokenizer.text}'"
+      raise VeloSyntaxError, "unexpected '#{@scanner.text}'"
     end
   end
 end

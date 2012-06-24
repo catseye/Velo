@@ -83,15 +83,17 @@ end
 ### establish the objectbase ###
 
 $Object = VeloObject.new 'Object'
-
 $Object.set 'extend', VeloMethod.new('extend', proc { |obj, args|
   obj.extend args[0]
 })
 
 $String = VeloObject.new 'String'
+$String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
+  debug "concat #{obj} #{args[0]}"
+  obj.contents = obj.contents + args[0].contents
+})
 
 $IO = VeloObject.new 'IO'
-
 $IO.set 'print', VeloMethod.new('print', proc { |obj, args|
   puts args[0]
 })
@@ -101,12 +103,6 @@ $Object.set 'String', $String
 $Object.set 'IO', $IO
 
 ### ... ###
-
-def mkstring s
-  o = VeloObject.new 'String literal'
-  o.extend $String
-  o.contents = s
-end
 
 if $0 == __FILE__
   $debug = true

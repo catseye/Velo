@@ -102,7 +102,7 @@ class MethodCall < AST
     end
     method = @method_expr.eval obj
     if method.is_a? VeloMethod
-      debug "running real method #{method}"
+      debug "running real method #{method} w/args #{args}"
       method.run obj, args
     else
       debug "just returning non-method on call #{method}"
@@ -126,7 +126,10 @@ class StringLiteral < AST
 
   def eval obj
     debug "eval #{self}"
-    mkstring @text
+    o = VeloObject.new 'String literal'
+    o.extend $String
+    o.contents = @text
+    o
   end
 
   def to_s

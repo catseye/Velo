@@ -14,6 +14,7 @@ debug "loading parser"
 #        | Name
 #        | "(" Expr ")"
 #        | StringLiteral
+#        | ArgumentRef
 #        .
 
 # Refactored to be LL(1):
@@ -22,10 +23,15 @@ debug "loading parser"
 # Expr ::= Name [Assn | Rest]
 #        | "(" [EOL] Expr ")" [Rest]
 #        | StringLiteral [Rest]
+#        | ArgumentRef
 #        .
 # Assn ::= "=" [EOL] Expr
 # Rest ::= "." [EOL] Rest
 #        | Expr {"," [EOL] Expr}
+
+# XXX weird issue: in order for { foo }.method to be parsed as
+# a method call instead of a lookup, you need at least one argument,
+# i.e. { foo }.method {}.  Fix this!
 
 class Parser
   def initialize s
@@ -61,6 +67,11 @@ class Parser
       s = @scanner.text
       @scanner.scan
       rest StringLiteral.new(s)
+    elsif @scanner.type == 'arg'
+      debug "parsing arg"
+      num = @scanner.text.to_i
+      @scanner.scan
+      rest Argument.new(num)
     elsif @scanner.type == 'ident'
       debug "parsing ident"
       ident = @scanner.text

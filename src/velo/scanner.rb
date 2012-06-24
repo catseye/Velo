@@ -66,6 +66,14 @@ class Scanner
       return
     end
 
+    # check for arguments
+    m = /\A\#(\d+)/.match @string
+    if m
+      @string = m.post_match
+      set_token(m[1], 'arg')
+      return
+    end
+
     # check for strings of "word" characters
     m = /\A(\w+)/.match @string
     if m

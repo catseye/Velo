@@ -129,11 +129,11 @@ $String.set 'class', VeloMethod.new('class', proc { |obj, args|
 })
 $String.set 'method', VeloMethod.new('method', proc { |obj, args|
   # obj is the string to turn into a method
-  # args is... well, not yet.
+  debug "turning #{obj} into a method"
   p = Parser.new obj.contents
   s = p.script
   VeloMethod.new('*created*', proc { |obj, args|
-    s.eval obj
+    s.eval obj, args
   })
 })
 $String.set 'equals', VeloMethod.new('equals', proc { |obj, args|
@@ -146,7 +146,8 @@ $String.set 'equals', VeloMethod.new('equals', proc { |obj, args|
 $String.set 'eval', VeloMethod.new('eval', proc { |obj, args|
   p = Parser.new obj.contents
   s = p.script
-  s.eval obj
+  # XXX args? really? ok, I suppose maybe so.
+  s.eval obj, args
 })
 
 $IO = VeloObject.new 'IO'

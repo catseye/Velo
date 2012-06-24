@@ -5,7 +5,7 @@ require 'velo/runtime'
 debug "loading ast"
 
 class AST
-  def eval obj
+  def eval obj, args
     # abstract
   end
 end
@@ -15,11 +15,11 @@ class Script < AST
     @exprs = exprs
   end
 
-  def eval obj
+  def eval obj, args
     debug "eval #{self}"
     e = nil
     for expr in @exprs
-      e = expr.eval obj
+      e = expr.eval obj, args
     end
     e
   end
@@ -39,9 +39,9 @@ class Assignment < AST
     @expr = expr
   end
 
-  def eval obj
+  def eval obj, args
     debug "eval #{self}"
-    e = @expr.eval obj
+    e = @expr.eval obj, args
     obj.set @ident, e
     e
   end
@@ -54,11 +54,11 @@ end
 # This is great... we have an AST node that doesn't correspond to any part
 # of the concrete syntax.  (It corresponds to the 'implicit self'.)
 class Self < AST
-  def eval obj
+  def eval obj, args
     obj
   end
 
-  def find_receiver obj
+  def find_receiver obj, args
     obj
   end
 
@@ -81,14 +81,14 @@ class Lookup < AST
     @ident
   end
 
-  def find_receiver obj
+  def find_receiver obj, args
     debug "find_receiver #{self}"
-    @receiver.eval obj
+    @receiver.eval obj, args
   end
 
-  def eval obj
+  def eval obj, args
     debug "eval #{self}"
-    receiver = @receiver.eval obj
+    receiver = @receiver.eval obj, args
     receiver.lookup @ident
   end
 
@@ -103,15 +103,15 @@ class MethodCall < AST
     @exprs = exprs
   end
 
-  def eval obj
+  def eval obj, args
     debug "eval #{self}"
     args = []
     for expr in @exprs
-      args.push(expr.eval obj)
+      args.push(expr.eval obj, args)
     end
-    method = @method_expr.eval obj
+    method = @method_expr.eval obj, args
     debug "arguments evaluated, now calling #{@method_expr} -> #{method}"
-    receiver = @method_expr.find_receiver obj
+    receiver = @method_expr.find_receiver obj, args
     if method.is_a? VeloMethod
       debug "running real method #{method} w/args #{args}, receiver=#{receiver}"
       method.run receiver, args
@@ -130,12 +130,27 @@ class MethodCall < AST
   end
 end
 
+class Argument < AST
+  def initialize num
+    @num = num-1
+  end
+
+  def eval obj, args
+    debug "eval #{self}"
+    args[@num]
+  end
+
+  def to_s
+    "Argument(#{@num})"
+  end
+end
+
 class StringLiteral < AST
   def initialize text
     @text = text
   end
 
-  def eval obj
+  def eval obj, args
     debug "eval #{self}"
     make_string_literal @text
   end

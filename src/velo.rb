@@ -26,6 +26,6 @@ ARGV.each do |arg|
     p = Parser.new(text)
     s = p.script
     o = VeloObject.new 'main-script'
-    s.eval o
+    s.eval o, []   # XXX could pass command-line arguments here...
   end
 end

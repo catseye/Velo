@@ -202,7 +202,7 @@ Which means a script can have methods.
 
     | announce = {
     |   IO.print {This is }.concat {Vern}
-    | }.method {x}
+    | }.method {}
     | announce
     = This is Vern
 
@@ -212,8 +212,8 @@ argument is a string which is a list of formal parameter names.
 Methods can have arguments:
 
     | announce = {
-    |   IO.print {This is }.concat x
-    | }.method {x}
+    |   IO.print {This is }.concat #1
+    | }.method {}
     | announce {Raina}
     = This is Raina
 
@@ -248,8 +248,8 @@ object as "self".
     | Jonkers = {
     |   extend IO
     |   announce = {
-    |     print {This is }.concat x
-    |   }.method {x}
+    |     print {This is }.concat #1
+    |   }.method {}
     | }.class
     | Jeepers = {
     |   extend Jonkers
@@ -275,8 +275,8 @@ a class that it defines:
     | Jonkers = {
     |   extend IO
     |   announce = {
-    |     print {This is }.concat x
-    |   }.method {x}
+    |     print {This is }.concat #1
+    |   }.method {}
     | }.class
     | extend Jonkers
     | announce {Ike}
@@ -284,7 +284,7 @@ a class that it defines:
 
 The block given to `extend` is just a string, of course.
 
-    | extend {extend IO; p = {print x}.method {x}}.class
+    | extend {extend IO; p = {print #1}.method {}}.class
     | p {Hello!}
     = Hello!
 
@@ -329,10 +329,10 @@ effectively "inherit" (read: delegate to, when all other options
 are exhausted) from `Object`, they can all use this "explicit self".
 
     | McTavish = {
-    |   bar = { j.hey }.method {j}
+    |   bar = { #1.hey }.method {}
     | }.class
     | Jeskers = {
-    |   bar = { m.bar self }.method {m}
+    |   bar = { #1.bar self }.method {}
     |   hey = { IO.print {Hey!} }.method {}
     | }.class
     | m = McTavish.new

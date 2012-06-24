@@ -133,6 +133,17 @@ purposes.  We probably need something like Ruby's `initialize`.)
     | print {Done}
     = Done
 
+The block used to define a class, of course, just a string, and can be
+a string variable.
+
+    | a = {extend IO; print {What?}}
+    | Jonkers = a.class
+    | Jonkers.new
+    = What?
+
+    | {extend IO; print {Yes!}}.class.new
+    = Yes!
+
 Aside on Syntax
 ---------------
 
@@ -206,22 +217,19 @@ Methods can have arguments:
     | announce {Raina}
     = This is Raina
 
-The block used to define a class or method is, of course, just a string,
-and can be a string variable.
+The block used to define a method is, of course, just a string.
 
-    | extend IO
-    | a = {print x}
-    | announce = a.method {x}
-    | announce {Hallo}
-    = Hallo
+    | a = {IO.print {This is Naoko}}
+    | announce = a.method {}
+    | announce
+    = This is Naoko
 
-    | a = {extend IO; print {What?}}
-    | Jonkers = a.class
-    | Jonkers.new
-    = What?
-
-    | {extend IO; print {Yes!}}.class.new
-    = Yes!
+Note, however, that a method is not a Velo object, at least not in this
+early version of Velo.  The only operation that is defined on the
+result of calling the `method` method on a string, is assigning it to
+an attribute of an object, from whence it can be called.  Trying to
+do anything else to it (pass it to another method, for example) is not
+defined.
 
 Delegation
 ----------
@@ -239,9 +247,9 @@ object as "self".
 
     | Jonkers = {
     |   extend IO
-    |   def announce(x) {
+    |   announce = {
     |     print {This is }.concat x
-    |   }
+    |   }.method {x}
     | }.class
     | Jeepers = {
     |   extend Jonkers
@@ -266,9 +274,9 @@ a class that it defines:
 
     | Jonkers = {
     |   extend IO
-    |   def announce(x) {
+    |   announce = {
     |     print {This is }.concat x
-    |   }
+    |   }.method {x}
     | }.class
     | extend Jonkers
     | announce {Ike}
@@ -292,21 +300,20 @@ source code order; the objects added as parent objects by more
 recently executed `extend`s are searched before those added by
 earlier executed `extend`s.
 
-    | class Jonkers {
-    |   def foo { 14 }
-    | }
-    | class Jeepers {
-    |   def foo { 29 }
-    | }
-    | class Jeskers {
+    | Jonkers = {
+    |   foo = { {fourteen} }.method {}
+    | }.class
+    | Jeepers = {
+    |   foo = { {twenty-nine} }.method {}
+    | }.class
+    | Jeskers = {
     |   extend Jonkers
     |   extend Jeepers
-    |   def bar = { foo }
-    | }
-    | extend IO
+    |   bar = { foo }.method {}
+    | }.class
     | j = Jeskers.new
-    | print j.bar
-    = 29
+    | IO.print j.bar
+    = twenty-nine
 
 `self`
 ------
@@ -321,17 +328,16 @@ which simply returns the object it is called on.  Since all objects
 effectively "inherit" (read: delegate to, when all other options
 are exhausted) from `Object`, they can all use this "explicit self".
 
-    | class McTavish {
-    |   def bar(j) { j.hey }
-    | }
-    | class Jeskers {
-    |   extend IO
-    |   def bar(m) { m.bar self }
-    |   def hey { print {Hey!} }
-    | }
+    | McTavish = {
+    |   bar = { j.hey }.method {j}
+    | }.class
+    | Jeskers = {
+    |   bar = { m.bar self }.method {m}
+    |   hey = { IO.print {Hey!} }.method {}
+    | }.class
     | m = McTavish.new
     | j = Jeskers.new
-    | j.bar(m)
+    | j.bar m
     = Hey!
 
 Appendix

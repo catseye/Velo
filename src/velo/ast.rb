@@ -1,4 +1,4 @@
-require 'velo/debug.rb'
+require 'velo/debug'
 
 debug "loading ast"
 

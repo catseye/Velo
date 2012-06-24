@@ -6,9 +6,10 @@
 # (Part of me is also thinking it's a bad idea to try to implement Velo
 # in Ruby, but for now, why not.)
 
-require 'velo/debug.rb'
+require 'velo/debug'
 $debug = false
-require 'velo/parser.rb'
+require 'velo/parser'
+require 'velo/runtime'
 
 ############ Main ############
 

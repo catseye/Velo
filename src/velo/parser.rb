@@ -1,7 +1,7 @@
-require 'velo/debug.rb'
+require 'velo/debug'
 
-require 'velo/scanner.rb'
-require 'velo/ast.rb'
+require 'velo/scanner'
+require 'velo/ast'
 
 debug "loading parser"
 

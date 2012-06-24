@@ -58,6 +58,10 @@ class Self < AST
     obj
   end
 
+  def find_receiver obj
+    obj
+  end
+
   def to_s
     "Self()"
   end
@@ -75,6 +79,11 @@ class Lookup < AST
 
   def ident
     @ident
+  end
+
+  def find_receiver obj
+    debug "find_receiver #{self}"
+    @receiver.eval obj
   end
 
   def eval obj
@@ -101,9 +110,10 @@ class MethodCall < AST
       args.push(expr.eval obj)
     end
     method = @method_expr.eval obj
+    receiver = @method_expr.find_receiver obj
     if method.is_a? VeloMethod
-      debug "running real method #{method} w/args #{args}"
-      method.run obj, args
+      debug "running real method #{method} w/args #{args}, receiver=#{receiver}"
+      method.run receiver, args
     else
       debug "just returning non-method on call #{method}"
       method
@@ -126,7 +136,7 @@ class StringLiteral < AST
 
   def eval obj
     debug "eval #{self}"
-    o = VeloObject.new 'String literal'
+    o = VeloObject.new "{#{@text}}"
     o.extend $String
     o.contents = @text
     o

@@ -37,7 +37,7 @@ class VeloObject
   end
 
   def to_s
-    "#{@title}(#{@parents},#{@attrs})"
+    "VeloObject('#{@title}')"
   end
 
   def set ident, method
@@ -59,7 +59,7 @@ class VeloObject
     end
     trail.push self
     if @attrs.has_key? ident
-      debug "found here"
+      debug "found here (#{self})"
       @attrs[ident]
     else
       x = nil
@@ -91,11 +91,13 @@ $String = VeloObject.new 'String'
 $String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
   debug "concat #{obj} #{args[0]}"
   obj.contents = obj.contents + args[0].contents
+  # XXX should this create a new object, maybe?
+  obj
 })
 
 $IO = VeloObject.new 'IO'
 $IO.set 'print', VeloMethod.new('print', proc { |obj, args|
-  puts args[0]
+  puts args[0].contents
 })
 
 $Object.set 'Object', $Object

@@ -47,7 +47,19 @@ class Assignment < AST
   end
 
   def to_s
-    "Assignment(#{@ident}=#{@expr})"
+    "Assignment(#{@ident},#{@expr})"
+  end
+end
+
+# This is great... we have an AST node that doesn't correspond to any part
+# of the concrete syntax.  (It corresponds to the 'implicit self'.)
+class Self < AST
+  def eval obj
+    obj
+  end
+
+  def to_s
+    "Self()"
   end
 end
 
@@ -67,32 +79,19 @@ class Lookup < AST
 
   def eval obj
     debug "eval #{self}"
-    receiver = nil
-    if @receiver == 'self'
-      receiver = obj
-    else
-      receiver = @receiver.eval obj
-    end
-    receiver.call @ident, []
+    receiver = @receiver.eval obj
+    receiver.lookup @ident, []
   end
 
   def to_s
-    "Lookup(#{@receiver}.#{@ident})"
+    "Lookup(#{@receiver},'#{@ident}')"
   end
 end
 
 class MethodCall < AST
-  def initialize ident, exprs
-    @ident = ident
+  def initialize method_expr, exprs
+    @method_expr = method_expr
     @exprs = exprs
-    # blah, this needs to be rewritten
-    if @ident.is_a? Lookup
-      if @ident.receiver == 'self'
-        @ident = @ident.ident
-      else
-        raise "I can't handle this sort of thing yet"
-      end
-    end
   end
 
   def eval obj
@@ -101,11 +100,18 @@ class MethodCall < AST
     for expr in @exprs
       args.push(expr.eval obj)
     end
-    obj.call @ident, args
+    method = @method_expr.eval obj
+    if method.is_a? VeloMethod
+      debug "running real method #{method}"
+      method.run obj, args
+    else
+      debug "just returning non-method on call #{method}"
+      method
+    end
   end
 
   def to_s
-    text = "MethodCall(#{@ident},"
+    text = "MethodCall(#{@method_expr},"
     for e in @exprs
       text += e.to_s + ","
     end
@@ -124,6 +130,6 @@ class StringLiteral < AST
   end
 
   def to_s
-    "StringLiteral(#{@text})"
+    "StringLiteral('#{@text}')"
   end
 end

@@ -70,7 +70,15 @@ class Parser
         @scanner.consume_type 'EOL'
         return Assignment.new(ident, expr)
       end
-      rest Lookup.new('self', ident)
+      # we now parse the rest of the expression.  If there is no rest of
+      # the expression, though, we want to make sure this is a method call.
+      so_far = Lookup.new(Self.new, ident)
+      if ['EOL', 'EOF'].include? @scanner.type
+        so_far = MethodCall.new(so_far, [])
+      elsif [')', ','].include? @scanner.text 
+        so_far = MethodCall.new(so_far, [])
+      end
+      rest so_far
     else
       raise VeloSyntaxError, "unexpected '#{@scanner.text}'"
     end

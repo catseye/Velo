@@ -71,19 +71,6 @@ class VeloObject
     end
   end
 
-  def call ident, args
-    if not ident.is_a? String
-      raise "identifier being called is not a string! '#{ident}'"
-    end
-    attr = lookup ident, []
-    debug "calling #{ident} (#{attr}) on #{self}"
-    if attr.is_a? VeloMethod
-      attr.run self, args
-    else
-      attr
-    end
-  end
-
   def contents
     @contents
   end

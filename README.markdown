@@ -5,7 +5,7 @@ Velo is an object-oriented language, inspired somewhat by Ruby,
 and sharing somewhat Robin's "radically goo-oriented" approach.
 
 (I don't really like the term "scripting language", but it seems
-to be fitting here for whatever reason, and where I might normally
+to be fitting here, for whatever reason, so where I might normally
 say "program" I will instead say "script".)
 
 We shall introduce Velo with a series of simple examples in
@@ -73,8 +73,8 @@ Classes can be defined within a script:
     | Jonkers = {
     |   extend {IO}
     |   print {What?}
-    | }.class;
-    | Jonkers.new;
+    | }.class
+    | Jonkers.new
     = What?
 
 Note that `class` is a method on strings.
@@ -87,10 +87,10 @@ class:
     |   Fordible = {
     |     extend {IO}
     |     print {Sure}
-    |   }.class;
-    |   Fordible.new;
-    | }.class;
-    | Jonkers.new;
+    |   }.class
+    |   Fordible.new
+    | }.class
+    | Jonkers.new
     = Sure
 
 Our demonstrations above show that a class has a "body" of code which
@@ -105,9 +105,9 @@ defined.  In Velo, it is only run when the class is instantiated.
     | Jonkers = {
     |   extend {IO}
     |   print {Sure}
-    | }.class;
-    | Jonkers.new;
-    | Jonkers.new;
+    | }.class
+    | Jonkers.new
+    | Jonkers.new
     = Sure
     = Sure
 
@@ -116,9 +116,9 @@ defined.  In Velo, it is only run when the class is instantiated.
     |   Fordible = {
     |     extend {IO}
     |     print {Sure}
-    |   }.class;
-    |   Fordible.new;
-    | }.class;
+    |   }.class
+    |   Fordible.new
+    | }.class
     | print {Done}
     = Done
 
@@ -130,25 +130,24 @@ we haven't said much about the basic properties of its syntax.  Some
 may be obvious from the examples, but there are probably points worth
 clarifying here.
 
-A Velo script is simply a list of expressions.  No expression seperator
-is needed; an expression ends when it ends.
+A Velo script is simply a list of expressions, seperated by end-of-line
+markers, with a few qualifications:
+
+*   A sequence of linefeeds and carriage returns is an end-of-line
+    marker.
+*   The token `;` is also considered an end-of-line marker.
+*   A series of end-of-line markers, possibly with intervening whitespace,
+    is considered a single end-of-line marker.
+*   An end-of-line marker can optionally occur after the tokens `(`,
+    `=`, and `,`, without terminating the expression.
 
 A method call is followed by a list of arguments seperated by commas.
 (You saw this above with the `if` method.)  Velo does not statically
 record the arity of a method, so you can pass any number of arguments
 that you want (but of course, the method may fail if it is not given the
 number it expects.)  The parser tells when a method call ends by the
-fact that there are no more commas.
-
-But this means that for methods that do not take any arguments at all,
-such as `class`, we need some way to indicate that the next expression
-in the script is not to be taken as an argument to the method.  The
-parser considers the list of arguments to be terminated when it sees
-`;` or `)`.  So, the following are two ways to call a method with no
-argument:
-
-    object.method;
-    (object.method)
+fact that there are no more commas (it instead ran into a `)` or an
+end-of-line marker or the end of the file.)
 
 Method calls can be chained:
 
@@ -173,8 +172,8 @@ Typically, a class will define some methods.
     |   announce = {
     |     print "This is ".concat x
     |   }.method {x}
-    | }.class;
-    | j = Jonkers.new;
+    | }.class
+    | j = Jonkers.new
     | j.announce {Maeve}
     = This is Maeve
 
@@ -200,11 +199,11 @@ and can be a string variable.
     = Hallo
 
     | a = {extend {IO} print {What?}}
-    | Jonkers = a.class;
-    | Jonkers.new;
+    | Jonkers = a.class
+    | Jonkers.new
     = What?
 
-    | {extend {IO} print {Yes!}}.class.new;
+    | {extend {IO} print {Yes!}}.class.new
     = Yes!
 
 Delegation
@@ -226,11 +225,11 @@ object as "self".
     |   def announce(x) {
     |     print "This is ".concat x
     |   }
-    | }.class;
+    | }.class
     | Jeepers = {
     |   extend {Jonkers}
-    | }.class;
-    | j = Jeepers.new;
+    | }.class
+    | j = Jeepers.new
     | j.announce {Luke}
     = This is Luke
 
@@ -253,14 +252,14 @@ a class that it defines:
     |   def announce(x) {
     |     print "This is ".concat x
     |   }
-    | }.class;
+    | }.class
     | extend {Jonkers}
     | announce {Ike}
     = This is Ike
 
 The block given to `extend` is just a string, of course.
 
-    | extend {{extend {IO} p = {print x}.method {x}}.class;}
+    | extend {{extend {IO} p = {print x}.method {x}}.class}
     | p {Hello!}
     = Hello!
 
@@ -288,8 +287,8 @@ earlier executed `extend`s.
     |   def bar = { foo }
     | }
     | extend {IO}
-    | j = Jeskers.new;
-    | print j.bar;
+    | j = Jeskers.new
+    | print j.bar
     = 29
 
 `self`
@@ -306,15 +305,15 @@ effectively "inherit" (read: delegate to, when all other options
 are exhausted) from `Object`, they can all use this "explicit self".
 
     | class McTavish {
-    |   def bar(j) { j.hey; }
+    |   def bar(j) { j.hey }
     | }
     | class Jeskers {
     |   extend {IO}
     |   def bar(m) { m.bar self }
     |   def hey { print {Hey!} }
     | }
-    | m = McTavish.new;
-    | j = Jeskers.new;
+    | m = McTavish.new
+    | j = Jeskers.new
     | j.bar(m)
     = Hey!
 
@@ -350,11 +349,11 @@ Summary of methods on `IO`
 Grammar
 -------
 
-    Velo ::= {Expr}.
-    Expr ::= Name "=" Expr
-           | Expr {"." Name} (";" | Expr {"," Expr})
+    Velo ::= {Expr EOL}.
+    Expr ::= Name "=" [EOL] Expr
+           | Expr {"." [EOL] Name} [Expr {"," [EOL] Expr}]
            | Name
-           | "(" Expr ")"
+           | "(" [EOL] Expr ")"
            | StringLiteral
            .
 

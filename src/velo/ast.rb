@@ -11,9 +11,9 @@ class Script < AST
   end
   
   def to_s
-    text = "Script("
+    text = "Script(\n"
     for e in @exprs
-      text += e.to_s + ","
+      text += "  " + e.to_s + ",\n"
     end
     text + ")"
   end

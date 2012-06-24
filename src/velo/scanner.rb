@@ -37,7 +37,7 @@ class Scanner
   end
 
   def scan_impl
-    m = /\A\s+/.match @string
+    m = /\A[ \t]+/.match @string
     if not m.nil?
       @string = m.post_match
       #debug "consumed whitespace, string now '#{@string}'"
@@ -45,6 +45,16 @@ class Scanner
 
     if @string.empty?
       set_token('EOF', 'EOF')
+      return
+    end
+
+    m = /\A[\r\n;]+/.match @string
+    if not m.nil?
+      while not m.nil?
+        @string = m.post_match
+        m = /\A[ \t]*[\r\n;]+/.match @string
+      end
+      set_token('EOL', 'EOL')
       return
     end
 
@@ -101,11 +111,28 @@ class Scanner
     end
   end
 
+  def consume_type t
+    if @type == t
+      scan
+      true
+    else
+      false
+    end
+  end
+
   def expect s
     if @text == s
       scan
     else
       raise VeloSyntaxError, "expected '#{s}', found '#{@text}'"
+    end
+  end
+
+  def expect_type set
+    if set.include? @type
+      scan
+    else
+      raise VeloSyntaxError, "expected '#{t}', found '#{@text}' (#{@type})"
     end
   end
 end

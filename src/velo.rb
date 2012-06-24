@@ -7,22 +7,23 @@
 # in Ruby, but for now, why not.)
 
 require 'velo/debug.rb'
-$debug = true
+$debug = false
 require 'velo/parser.rb'
 
 ############ Main ############
 
-ARGV.each do |filename|
-  File.open(filename, 'r') do |f|
+ARGV.each do |arg|
+  if arg == '--debug'
+    $debug = true
+    next
+  end
+  File.open(arg, 'r') do |f|
     text = ''
     while line = f.gets
       text += line
     end
     p = Parser.new(text)
     s = p.script
-    debug s
+    puts s
   end
 end
-
-$stderr.puts "I fail"
-exit false

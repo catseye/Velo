@@ -52,19 +52,17 @@ class Parser
   def expr
     debug "parsing Expr production"
     if @scanner.type == 'EOF'
-      return nil
+      nil
     elsif @scanner.consume "("
       debug "parsing parens"
       e = expr
       @scanner.expect ")"
-      # [Rest]
-      return e
+      rest e
     elsif @scanner.type == 'strlit'
       debug "parsing strlit"
       s = @scanner.text
       @scanner.scan
-      # [Rest]
-      return StringLiteral.new(s)
+      rest StringLiteral.new(s)
     elsif @scanner.type == 'ident'
       debug "parsing ident"
       ident = @scanner.text
@@ -73,21 +71,31 @@ class Parser
         debug "parsing assignment"
         return Assignment.new(ident, expr)
       end
-      # parse arguments -- should be in Rest
-      if @scanner.consume ";"
-        # no arguments
-      else
-        args = []
-        e = expr
-        args.push(e) unless e.nil?
-        while @scanner.consume ","
-          e = expr
-          args.push(e) unless e.nil?
-        end
-        return MethodCall.new(ident, args)
-      end
+      rest Lookup.new('self', ident)
     else
       raise VeloSyntaxError, "unexpected '#{@scanner.text}'"
+    end
+  end
+
+  def rest receiver
+    debug "parsing Rest (of Expr) production"
+    if @scanner.consume "."
+      debug "parsing lookup"
+      ident = @scanner.text
+      @scanner.scan
+      rest Lookup.new(receiver, ident)
+    elsif @scanner.consume ";"
+      # no arguments
+      receiver
+    else
+      args = []
+      e = expr
+      args.push(e) unless e.nil?
+      while @scanner.consume ","
+        e = expr
+        args.push(e) unless e.nil?
+      end
+      MethodCall.new(receiver, args)
     end
   end
 end

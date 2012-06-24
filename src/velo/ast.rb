@@ -30,6 +30,17 @@ class Assignment < AST
   end
 end
 
+class Lookup < AST
+  def initialize receiver, ident
+    @receiver = receiver
+    @ident = ident
+  end
+
+  def to_s
+    "Lookup(#{@receiver}.#{@ident})"
+  end
+end
+
 class MethodCall < AST
   def initialize ident, exprs
     @ident = ident

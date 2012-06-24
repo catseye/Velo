@@ -29,10 +29,6 @@ debug "loading parser"
 # Rest ::= "." [EOL] Rest
 #        | Expr {"," [EOL] Expr}
 
-# XXX weird issue: in order for { foo }.method to be parsed as
-# a method call instead of a lookup, you need at least one argument,
-# i.e. { foo }.method {}.  Fix this!
-
 class Parser
   def initialize s
     @scanner = Scanner.new(s)
@@ -61,17 +57,17 @@ class Parser
       @scanner.consume_type 'EOL'
       e = expr
       @scanner.expect ")"
-      rest e
+      rest e, false
     elsif @scanner.type == 'strlit'
       debug "parsing strlit"
       s = @scanner.text
       @scanner.scan
-      rest StringLiteral.new(s)
+      rest StringLiteral.new(s), false
     elsif @scanner.type == 'arg'
       debug "parsing arg"
       num = @scanner.text.to_i
       @scanner.scan
-      rest Argument.new(num)
+      rest Argument.new(num), false
     elsif @scanner.type == 'ident'
       debug "parsing ident"
       ident = @scanner.text
@@ -83,30 +79,26 @@ class Parser
       end
       # we now parse the rest of the expression.  If there is no rest of
       # the expression, though, we want to make sure this is a method call.
-      so_far = Lookup.new(Self.new, ident)
-      if ['EOL', 'EOF'].include? @scanner.type
-        so_far = MethodCall.new(so_far, [])
-      elsif [')', ','].include? @scanner.text 
-        so_far = MethodCall.new(so_far, [])
-      end
-      rest so_far
+      rest Lookup.new(Self.new, ident), true
     else
       raise VeloSyntaxError, "unexpected '#{@scanner.text}'"
     end
   end
 
-  def rest receiver
+  def rest receiver, is_call
     debug "parsing Rest (of Expr) production"
     if @scanner.consume "."
       debug "parsing lookup"
       @scanner.consume_type 'EOL'
       ident = @scanner.text
       @scanner.scan
-      rest Lookup.new(receiver, ident)
-    elsif ['EOL', 'EOF'].include? @scanner.type
-      receiver
-    elsif [')', ','].include? @scanner.text 
-      receiver
+      rest Lookup.new(receiver, ident), true
+    elsif (['EOL', 'EOF'].include? @scanner.type or [')', ','].include? @scanner.text)
+      if is_call
+        MethodCall.new(receiver, [])
+      else
+        receiver
+      end
     else
       args = []
       e = expr

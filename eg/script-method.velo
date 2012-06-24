@@ -1,3 +1,3 @@
 eeyore = IO
-foo = {eeyore.print {Hello, world!  Sincerely yours, foo.}}.method {}
+foo = {eeyore.print {Hello, world!  Sincerely yours, foo.}}.method
 foo

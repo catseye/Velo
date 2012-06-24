@@ -192,7 +192,7 @@ Typically, a class will define some methods.
     | Jonkers = {
     |   announce = {
     |     IO.print {This is }.concat {Maeve}
-    |   }.method {}
+    |   }.method
     | }.class
     | j = Jonkers.new
     | j.announce
@@ -202,7 +202,7 @@ Which means a script can have methods.
 
     | announce = {
     |   IO.print {This is }.concat {Vern}
-    | }.method {}
+    | }.method
     | announce
     = This is Vern
 
@@ -213,14 +213,14 @@ Methods can have arguments:
 
     | announce = {
     |   IO.print {This is }.concat #1
-    | }.method {}
+    | }.method
     | announce {Raina}
     = This is Raina
 
 The block used to define a method is, of course, just a string.
 
     | a = {IO.print {This is Naoko}}
-    | announce = a.method {}
+    | announce = a.method
     | announce
     = This is Naoko
 
@@ -249,7 +249,7 @@ object as "self".
     |   extend IO
     |   announce = {
     |     print {This is }.concat #1
-    |   }.method {}
+    |   }.method
     | }.class
     | Jeepers = {
     |   extend Jonkers
@@ -276,7 +276,7 @@ a class that it defines:
     |   extend IO
     |   announce = {
     |     print {This is }.concat #1
-    |   }.method {}
+    |   }.method
     | }.class
     | extend Jonkers
     | announce {Ike}
@@ -284,7 +284,7 @@ a class that it defines:
 
 The block given to `extend` is just a string, of course.
 
-    | extend {extend IO; p = {print #1}.method {}}.class
+    | extend {extend IO; p = {print #1}.method}.class
     | p {Hello!}
     = Hello!
 
@@ -301,15 +301,15 @@ recently executed `extend`s are searched before those added by
 earlier executed `extend`s.
 
     | Jonkers = {
-    |   foo = { {fourteen} }.method {}
+    |   foo = { {fourteen} }.method
     | }.class
     | Jeepers = {
-    |   foo = { {twenty-nine} }.method {}
+    |   foo = { {twenty-nine} }.method
     | }.class
     | Jeskers = {
     |   extend Jonkers
     |   extend Jeepers
-    |   bar = { foo }.method {}
+    |   bar = { foo }.method
     | }.class
     | j = Jeskers.new
     | IO.print j.bar
@@ -329,11 +329,11 @@ effectively "inherit" (read: delegate to, when all other options
 are exhausted) from `Object`, they can all use this "explicit self".
 
     | McTavish = {
-    |   bar = { #1.hey }.method {}
+    |   bar = { #1.hey }.method
     | }.class
     | Jeskers = {
-    |   bar = { #1.bar self }.method {}
-    |   hey = { IO.print {Hey!} }.method {}
+    |   bar = { #1.bar self }.method
+    |   hey = { IO.print {Hey!} }.method
     | }.class
     | m = McTavish.new
     | j = Jeskers.new

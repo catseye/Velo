@@ -1,2 +1,2 @@
-bar = {IO.print {Hello, }.concat #1}.method {}
+bar = {IO.print {Hello, }.concat #1}.method
 bar {there.}

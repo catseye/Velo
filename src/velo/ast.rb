@@ -16,6 +16,7 @@ class Script < AST
   end
 
   def eval obj
+    debug "eval #{self}"
     e = nil
     for expr in @exprs
       e = expr.eval obj
@@ -39,8 +40,9 @@ class Assignment < AST
   end
 
   def eval obj
-    e = expr.eval obj
-    obj.set ident, e
+    debug "eval #{self}"
+    e = @expr.eval obj
+    obj.set @ident, e
     e
   end
 
@@ -55,10 +57,21 @@ class Lookup < AST
     @ident = ident
   end
 
+  def receiver
+    @receiver
+  end
+
+  def ident
+    @ident
+  end
+
   def eval obj
-    receiver = @receiver
-    if receiver == 'self'
+    debug "eval #{self}"
+    receiver = nil
+    if @receiver == 'self'
       receiver = obj
+    else
+      receiver = @receiver.eval obj
     end
     receiver.call @ident, []
   end
@@ -72,9 +85,18 @@ class MethodCall < AST
   def initialize ident, exprs
     @ident = ident
     @exprs = exprs
+    # blah, this needs to be rewritten
+    if @ident.is_a? Lookup
+      if @ident.receiver == 'self'
+        @ident = @ident.ident
+      else
+        raise "I can't handle this sort of thing yet"
+      end
+    end
   end
 
   def eval obj
+    debug "eval #{self}"
     args = []
     for expr in @exprs
       args.push(expr.eval obj)
@@ -97,6 +119,7 @@ class StringLiteral < AST
   end
 
   def eval obj
+    debug "eval #{self}"
     mkstring @text
   end
 

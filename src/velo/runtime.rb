@@ -8,6 +8,7 @@ debug "loading runtime"
 # the built-in objects, for convenience of other sources
 $Object = nil
 $String = nil
+$IO = nil
 
 # title is for debugging only.  methods themselves do not have names.
 class VeloMethod
@@ -71,6 +72,9 @@ class VeloObject
   end
 
   def call ident, args
+    if not ident.is_a? String
+      raise "identifier being called is not a string! '#{ident}'"
+    end
     attr = lookup ident, []
     debug "calling #{ident} (#{attr}) on #{self}"
     if attr.is_a? VeloMethod
@@ -99,8 +103,15 @@ $Object.set 'extend', VeloMethod.new('extend', proc { |obj, args|
 
 $String = VeloObject.new 'String'
 
+$IO = VeloObject.new 'IO'
+
+$IO.set 'print', VeloMethod.new('print', proc { |obj, args|
+  puts args[0]
+})
+
 $Object.set 'Object', $Object
 $Object.set 'String', $String
+$Object.set 'IO', $IO
 
 ### ... ###
 

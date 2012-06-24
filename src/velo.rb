@@ -25,6 +25,7 @@ ARGV.each do |arg|
     end
     p = Parser.new(text)
     s = p.script
-    puts s
+    o = VeloObject.new 'main-script'
+    s.eval o
   end
 end

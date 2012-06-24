@@ -18,7 +18,7 @@ debug "loading parser"
 
 # Refactored to be LL(1):
 
-# Velo ::= {Expr EOL}.
+# Velo ::= {[EOL] Expr EOL}.
 # Expr ::= Name [Assn | Rest]
 #        | "(" [EOL] Expr ")" [Rest]
 #        | StringLiteral [Rest]
@@ -35,10 +35,12 @@ class Parser
   def script
     debug "parsing Script production"
     exprs = []
+    @scanner.consume_type "EOL"
     e = expr
     while not e.nil?
-      @scanner.expect_type ["EOL", "EOF"]
+      @scanner.expect_types ["EOL", "EOF"]
       exprs.push(e)
+      @scanner.consume_type "EOL"
       e = expr
     end
     Script.new(exprs)

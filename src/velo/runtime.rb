@@ -116,7 +116,13 @@ $String.set 'class', VeloMethod.new('class', proc { |obj, args|
   raise VeloMethodNotImplemented
 })
 $String.set 'method', VeloMethod.new('method', proc { |obj, args|
-  raise VeloMethodNotImplemented
+  # obj is the string to turn into a method
+  # args is... well, not yet.
+  p = Parser.new obj.contents
+  s = p.script
+  VeloMethod.new('*created*', proc { |obj, args|
+    s.eval obj
+  })
 })
 $String.set 'if', VeloMethod.new('if', proc { |obj, args|
   raise VeloMethodNotImplemented

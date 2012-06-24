@@ -128,7 +128,7 @@ class Scanner
     end
   end
 
-  def expect_type set
+  def expect_types set
     if set.include? @type
       scan
     else

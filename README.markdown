@@ -173,26 +173,32 @@ Now, about those Methods
 Typically, a class will define some methods.
 
     | Jonkers = {
-    |   extend IO
     |   announce = {
-    |     print "This is ".concat x
-    |   }.method {x}
+    |     IO.print {This is }.concat {Maeve}
+    |   }.method {}
     | }.class
     | j = Jonkers.new
-    | j.announce {Maeve}
+    | j.announce
     = This is Maeve
 
 Which means a script can have methods.
 
-    | extend IO
     | announce = {
-    |   print "This is ".concat x
+    |   IO.print {This is }.concat {Vern}
     | }.method {x}
-    | announce {Vern}
+    | announce
     = This is Vern
 
 So, yeah, `method` is a method on strings too, just like `class`.  The
 argument is a string which is a list of formal parameter names.
+
+Methods can have arguments:
+
+    | announce = {
+    |   IO.print {This is }.concat x
+    | }.method {x}
+    | announce {Raina}
+    = This is Raina
 
 The block used to define a class or method is, of course, just a string,
 and can be a string variable.
@@ -228,11 +234,11 @@ object as "self".
     | Jonkers = {
     |   extend IO
     |   def announce(x) {
-    |     print "This is ".concat x
+    |     print {This is }.concat x
     |   }
     | }.class
     | Jeepers = {
-    |   extend {Jonkers}
+    |   extend Jonkers
     | }.class
     | j = Jeepers.new
     | j.announce {Luke}
@@ -255,16 +261,16 @@ a class that it defines:
     | Jonkers = {
     |   extend IO
     |   def announce(x) {
-    |     print "This is ".concat x
+    |     print {This is }.concat x
     |   }
     | }.class
-    | extend {Jonkers}
+    | extend Jonkers
     | announce {Ike}
     = This is Ike
 
 The block given to `extend` is just a string, of course.
 
-    | extend {{extend IO; p = {print x}.method {x}}.class}
+    | extend {extend IO; p = {print x}.method {x}}.class
     | p {Hello!}
     = Hello!
 
@@ -354,7 +360,7 @@ Summary of methods on `IO`
 Grammar
 -------
 
-    Velo ::= {Expr EOL}.
+    Velo ::= {[EOL] Expr EOL}.
     Expr ::= Name "=" [EOL] Expr
            | Expr {"." [EOL] Name} [Expr {"," [EOL] Expr}]
            | Name

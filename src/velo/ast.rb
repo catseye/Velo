@@ -16,7 +16,7 @@ class Script < AST
   end
 
   def eval obj, args
-    debug "eval #{self}"
+    debug "eval #{self} on #{obj} with #{args}"
     e = nil
     for expr in @exprs
       e = expr.eval obj, args
@@ -40,7 +40,7 @@ class Assignment < AST
   end
 
   def eval obj, args
-    debug "eval #{self}"
+    debug "eval #{self} on #{obj} with #{args}"
     e = @expr.eval obj, args
     obj.set @ident, e
     e
@@ -55,6 +55,7 @@ end
 # of the concrete syntax.  (It corresponds to the 'implicit self'.)
 class Self < AST
   def eval obj, args
+    debug "eval #{self} on #{obj} with #{args}"
     obj
   end
 
@@ -87,7 +88,7 @@ class Lookup < AST
   end
 
   def eval obj, args
-    debug "eval #{self}"
+    debug "eval #{self} on #{obj} with #{args}"
     receiver = @receiver.eval obj, args
     receiver.lookup @ident
   end
@@ -104,17 +105,17 @@ class MethodCall < AST
   end
 
   def eval obj, args
-    debug "eval #{self}"
-    args = []
+    debug "eval #{self} on #{obj} with #{args}"
+    new_args = []
     for expr in @exprs
-      args.push(expr.eval obj, args)
+      new_args.push(expr.eval obj, args)
     end
     method = @method_expr.eval obj, args
     debug "arguments evaluated, now calling #{@method_expr} -> #{method}"
     receiver = @method_expr.find_receiver obj, args
     if method.is_a? VeloMethod
       debug "running real method #{method} w/args #{args}, receiver=#{receiver}"
-      method.run receiver, args
+      method.run receiver, new_args
     else
       debug "just returning non-method (#{method}) on call, receiver=#{receiver}"
       method
@@ -136,7 +137,7 @@ class Argument < AST
   end
 
   def eval obj, args
-    debug "eval #{self}"
+    debug "eval #{self} on #{obj} with #{args}"
     args[@num]
   end
 
@@ -151,7 +152,7 @@ class StringLiteral < AST
   end
 
   def eval obj, args
-    debug "eval #{self}"
+    debug "eval #{self} on #{obj} with #{args}"
     make_string_literal @text
   end
 

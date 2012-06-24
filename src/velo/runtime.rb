@@ -1,5 +1,6 @@
 require 'velo/debug'
 
+require 'velo/exceptions'
 require 'velo/parser'
 require 'velo/ast'
 
@@ -51,20 +52,31 @@ class VeloObject
   end
 
   # look up an identifier on this object, or any of its delegates
-  def lookup ident, trail
+  def lookup ident
     debug "lookup #{ident} on #{self}"
+    result = lookup_impl ident, []
+    debug "lookup result: #{result}"
+    if result.nil?
+      raise VeloAttributeNotFound, "could not locate '#{ident}' on #{self}"
+    end
+    result
+  end
+
+  # look up an identifier on this object, or any of its delegates
+  def lookup_impl ident, trail
+    debug "lookup_impl #{ident} on #{self}"
     if trail.include? self
       debug "we've already seen this object, stopping search"
-      nil
+      return nil
     end
     trail.push self
     if @attrs.has_key? ident
-      debug "found here (#{self})"
+      debug "found here (#{self}), it's #{@attrs[ident]}"
       @attrs[ident]
     else
       x = nil
       for parent in @parents
-        x = parent.lookup ident, trail
+        x = parent.lookup_impl ident, trail
         break if not x.nil?
       end
       x
@@ -86,6 +98,12 @@ $Object = VeloObject.new 'Object'
 $Object.set 'extend', VeloMethod.new('extend', proc { |obj, args|
   obj.extend args[0]
 })
+$Object.set 'self', VeloMethod.new('self', proc { |obj, args|
+  raise VeloMethodNotImplemented
+})
+$Object.set 'new', VeloMethod.new('new', proc { |obj, args|
+  raise VeloMethodNotImplemented
+})
 
 $String = VeloObject.new 'String'
 $String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
@@ -93,6 +111,15 @@ $String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
   obj.contents = obj.contents + args[0].contents
   # XXX should this create a new object, maybe?
   obj
+})
+$String.set 'class', VeloMethod.new('class', proc { |obj, args|
+  raise VeloMethodNotImplemented
+})
+$String.set 'method', VeloMethod.new('method', proc { |obj, args|
+  raise VeloMethodNotImplemented
+})
+$String.set 'if', VeloMethod.new('if', proc { |obj, args|
+  raise VeloMethodNotImplemented
 })
 
 $IO = VeloObject.new 'IO'

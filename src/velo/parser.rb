@@ -1,12 +1,10 @@
 require 'velo/debug'
 
+require 'velo/exceptions'
 require 'velo/scanner'
 require 'velo/ast'
 
 debug "loading parser"
-
-class VeloSyntaxError < StandardError  
-end
 
 # Grammar:
 

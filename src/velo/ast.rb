@@ -89,7 +89,7 @@ class Lookup < AST
   def eval obj
     debug "eval #{self}"
     receiver = @receiver.eval obj
-    receiver.lookup @ident, []
+    receiver.lookup @ident
   end
 
   def to_s
@@ -110,12 +110,13 @@ class MethodCall < AST
       args.push(expr.eval obj)
     end
     method = @method_expr.eval obj
+    debug "arguments evaluated, now calling #{@method_expr} -> #{method}"
     receiver = @method_expr.find_receiver obj
     if method.is_a? VeloMethod
       debug "running real method #{method} w/args #{args}, receiver=#{receiver}"
       method.run receiver, args
     else
-      debug "just returning non-method on call #{method}"
+      debug "just returning non-method (#{method}) on call, receiver=#{receiver}"
       method
     end
   end

@@ -137,10 +137,7 @@ class StringLiteral < AST
 
   def eval obj
     debug "eval #{self}"
-    o = VeloObject.new "{#{@text}}"
-    o.extend $String
-    o.contents = @text
-    o
+    make_string_literal @text
   end
 
   def to_s

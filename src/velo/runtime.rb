@@ -92,6 +92,13 @@ class VeloObject
   end
 end
 
+def make_string_literal text
+  o = VeloObject.new "#{@text}"
+  o.extend $String
+  o.contents = text
+  o
+end
+  
 ### establish the objectbase ###
 
 $Object = VeloObject.new 'Object'
@@ -104,13 +111,18 @@ $Object.set 'self', VeloMethod.new('self', proc { |obj, args|
 $Object.set 'new', VeloMethod.new('new', proc { |obj, args|
   raise VeloMethodNotImplemented
 })
+$Object.set 'if', VeloMethod.new('if', proc { |obj, args|
+  debug args
+  method = nil
+  choice = args[0].contents.empty? ? 2 : 1
+  method = args[choice].lookup 'eval'
+  method.run args[choice], []
+})
 
 $String = VeloObject.new 'String'
 $String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
   debug "concat #{obj} #{args[0]}"
-  obj.contents = obj.contents + args[0].contents
-  # XXX should this create a new object, maybe?
-  obj
+  make_string_literal(obj.contents + args[0].contents)
 })
 $String.set 'class', VeloMethod.new('class', proc { |obj, args|
   raise VeloMethodNotImplemented
@@ -124,8 +136,17 @@ $String.set 'method', VeloMethod.new('method', proc { |obj, args|
     s.eval obj
   })
 })
-$String.set 'if', VeloMethod.new('if', proc { |obj, args|
-  raise VeloMethodNotImplemented
+$String.set 'equals', VeloMethod.new('equals', proc { |obj, args|
+  if obj.contents == args[0].contents
+    make_string_literal "true"
+  else
+    make_string_literal ""
+  end
+})
+$String.set 'eval', VeloMethod.new('eval', proc { |obj, args|
+  p = Parser.new obj.contents
+  s = p.script
+  s.eval obj
 })
 
 $IO = VeloObject.new 'IO'
@@ -149,6 +170,6 @@ if $0 == __FILE__
   })
 
   velo_Shimmy = VeloObject.new 'Shimmy'
-  velo_Shimmy.call 'extend', [$String]
-  velo_Shimmy.call 'bar', [1,2,3]
+  velo_Shimmy.extend $String
+  (velo_Shimmy.lookup 'bar').run velo_Shimmy, [1,2,3]
 end

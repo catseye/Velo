@@ -36,18 +36,23 @@ Let those two ideas sink in for a moment, then we'll continue.
 Strings as Blocks
 -----------------
 
-Conditional statements are implemented by a method on strings.
+Conditional statements are implemented by a method called `if`.
+This method is on the root object, called `Object`, from which all
+objects, including your script, inherit.
 
-    | extend IO
-    | {5 > 4}.if {print {Yes}}, {print {No}}
+    | if ({X}.equals {X}), {IO.print {Yes}}, {IO.print {No}}
     = Yes
 
-To try to hammer this block-is-a-string thing home, you can just
-as easily call a method on a string variable as a string literal.
+    | if ({X}.equals {Y}), {IO.print {Yes}}, {IO.print {No}}
+    = No
 
-    | extend IO
-    | a = {4 > 5}
-    | a.if {print {Yes}}, {print {No}}
+To try to hammer this block-is-a-string thing home, you can just
+as easily call this method with arguments that are string variables,
+rather than string literals (that look like blocks of code.)
+
+    | yes = {IO.print {Yes}}
+    | no = {IO.print {No}} 
+    | if ({X}.equals {Y}), yes, no 
     = No
 
 You may be thinking that this is basically an implicit and
@@ -60,9 +65,10 @@ It's only when you have to `eval` a string in a variable, where you
 can't predict what it will be until you evaluate the surrounding code,
 that you necessarily take a performance hit.
 
-    | extend IO
-    | a = {7}.concat {>}.concat {5}
-    | a.if {print {Yes}}, {print {No}}
+    | p = {extend IO; print }
+    | yes = p.concat {{Yes}}
+    | no = p.concat {{No}}
+    | if ({X}.equals {X}), yes, no
     = Yes
 
 Scripts as Classes

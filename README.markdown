@@ -17,7 +17,7 @@ or even necessarily feasible.
 
 First, the ubiquitous "Hello, world!":
 
-    | extend {IO}
+    | extend IO
     | print {Hello, world!}
     = Hello, world!
 
@@ -38,14 +38,14 @@ Strings as Blocks
 
 Conditional statements are implemented by a method on strings.
 
-    | extend {IO}
+    | extend IO
     | {5 > 4}.if {print {Yes}}, {print {No}}
     = Yes
 
 To try to hammer this block-is-a-string thing home, you can just
 as easily call a method on a string variable as a string literal.
 
-    | extend {IO}
+    | extend IO
     | a = {4 > 5}
     | a.if {print {Yes}}, {print {No}}
     = No
@@ -60,7 +60,7 @@ It's only when you have to `eval` a string in a variable, where you
 can't predict what it will be until you evaluate the surrounding code,
 that you necessarily take a performance hit.
 
-    | extend {IO}
+    | extend IO
     | a = {7}.concat {>}.concat {5}
     | a.if {print {Yes}}, {print {No}}
     = Yes
@@ -71,7 +71,7 @@ Scripts as Classes
 Classes can be defined within a script:
 
     | Jonkers = {
-    |   extend {IO}
+    |   extend IO
     |   print {What?}
     | }.class
     | Jonkers.new
@@ -85,7 +85,7 @@ class:
 
     | Jonkers = {
     |   Fordible = {
-    |     extend {IO}
+    |     extend IO
     |     print {Sure}
     |   }.class
     |   Fordible.new
@@ -102,8 +102,13 @@ Note that this differs from how code like this is handled in Ruby; in
 that language, the code inside the class is executed when the class is
 defined.  In Velo, it is only run when the class is instantiated.
 
+(Note: I don't think the preceding idea is practicable anymore.
+That code needs to run to set up the (class) object, and we shan't
+artificially distinguish between subsets of that code for different
+purposes.  We probably need something like Ruby's `initialize`.)
+
     | Jonkers = {
-    |   extend {IO}
+    |   extend IO
     |   print {Sure}
     | }.class
     | Jonkers.new
@@ -111,10 +116,10 @@ defined.  In Velo, it is only run when the class is instantiated.
     = Sure
     = Sure
 
-    | extend {IO}
+    | extend IO
     | Jonkers = {
     |   Fordible = {
-    |     extend {IO}
+    |     extend IO
     |     print {Sure}
     |   }.class
     |   Fordible.new
@@ -168,7 +173,7 @@ Now, about those Methods
 Typically, a class will define some methods.
 
     | Jonkers = {
-    |   extend {IO}
+    |   extend IO
     |   announce = {
     |     print "This is ".concat x
     |   }.method {x}
@@ -179,7 +184,7 @@ Typically, a class will define some methods.
 
 Which means a script can have methods.
 
-    | extend {IO}
+    | extend IO
     | announce = {
     |   print "This is ".concat x
     | }.method {x}
@@ -192,18 +197,18 @@ argument is a string which is a list of formal parameter names.
 The block used to define a class or method is, of course, just a string,
 and can be a string variable.
 
-    | extend {IO}
+    | extend IO
     | a = {print x}
     | announce = a.method {x}
     | announce {Hallo}
     = Hallo
 
-    | a = {extend {IO} print {What?}}
+    | a = {extend IO; print {What?}}
     | Jonkers = a.class
     | Jonkers.new
     = What?
 
-    | {extend {IO} print {Yes!}}.class.new
+    | {extend IO; print {Yes!}}.class.new
     = Yes!
 
 Delegation
@@ -221,7 +226,7 @@ are found, that method on the parent is called, but with the target
 object as "self".
 
     | Jonkers = {
-    |   extend {IO}
+    |   extend IO
     |   def announce(x) {
     |     print "This is ".concat x
     |   }
@@ -248,7 +253,7 @@ Since scripts are no different from classes, a script can `extend`
 a class that it defines:
 
     | Jonkers = {
-    |   extend {IO}
+    |   extend IO
     |   def announce(x) {
     |     print "This is ".concat x
     |   }
@@ -259,7 +264,7 @@ a class that it defines:
 
 The block given to `extend` is just a string, of course.
 
-    | extend {{extend {IO} p = {print x}.method {x}}.class}
+    | extend {{extend IO; p = {print x}.method {x}}.class}
     | p {Hello!}
     = Hello!
 
@@ -282,11 +287,11 @@ earlier executed `extend`s.
     |   def foo { 29 }
     | }
     | class Jeskers {
-    |   extend {Jonkers}
-    |   extend {Jeepers}
+    |   extend Jonkers
+    |   extend Jeepers
     |   def bar = { foo }
     | }
-    | extend {IO}
+    | extend IO
     | j = Jeskers.new
     | print j.bar
     = 29
@@ -308,7 +313,7 @@ are exhausted) from `Object`, they can all use this "explicit self".
     |   def bar(j) { j.hey }
     | }
     | class Jeskers {
-    |   extend {IO}
+    |   extend IO
     |   def bar(m) { m.bar self }
     |   def hey { print {Hey!} }
     | }
@@ -363,6 +368,8 @@ TODO
 *   Delineate the scoping rules more rigorously, e.g. figure out where
     variables local to methods belong.
 *   Possibly unify scripts and strings.  (A script is just a string,
+    after all.)
+*   Possibly unify methods and scripts.  (A method is just a script,
     after all.)
 *   Talk about how scripts and modules can be unified similarly.
 *   Contrast with Ruby (e.g. toplevel methods being put on `Object`,

@@ -5,6 +5,10 @@ require 'velo/ast'
 
 debug "loading runtime"
 
+# the built-in objects, for convenience of other sources
+$Object = nil
+$String = nil
+
 # title is for debugging only.  methods themselves do not have names.
 class VeloMethod
   def initialize title, fun
@@ -21,13 +25,14 @@ class VeloMethod
   end
 end
 
-# title is for debugging only.  objects themselves do not have names.
 # parents will be [] for Object, [Object] for all other objects
 class VeloObject
-  def initialize title, parents
+  def initialize title
     @title = title
-    @parents = parents
+    @parents = []
+    @parents.push $Object if not $Object.nil?
     @attrs = {}
+    @contents = nil
   end
 
   def to_s
@@ -45,15 +50,20 @@ class VeloObject
   end
 
   # look up an identifier on this object, or any of its delegates
-  def lookup ident
+  def lookup ident, trail
     debug "lookup #{ident} on #{self}"
+    if trail.include? self
+      debug "we've already seen this object, stopping search"
+      nil
+    end
+    trail.push self
     if @attrs.has_key? ident
       debug "found here"
       @attrs[ident]
     else
       x = nil
       for parent in @parents
-        x = parent.lookup ident
+        x = parent.lookup ident, trail
         break if not x.nil?
       end
       x
@@ -61,7 +71,7 @@ class VeloObject
   end
 
   def call ident, args
-    attr = lookup ident
+    attr = lookup ident, []
     debug "calling #{ident} (#{attr}) on #{self}"
     if attr.is_a? VeloMethod
       attr.run self, args
@@ -69,28 +79,47 @@ class VeloObject
       attr
     end
   end
+
+  def contents
+    @contents
+  end
+  
+  def contents= c
+    @contents = c
+  end
+end
+
+### establish the objectbase ###
+
+$Object = VeloObject.new 'Object'
+
+$Object.set 'extend', VeloMethod.new('extend', proc { |obj, args|
+  obj.extend args[0]
+})
+
+$String = VeloObject.new 'String'
+
+$Object.set 'Object', $Object
+$Object.set 'String', $String
+
+### ... ###
+
+def mkstring s
+  o = VeloObject.new 'String literal'
+  o.extend $String
+  o.contents = s
 end
 
 if $0 == __FILE__
-  #$debug = true
-  # A toy objectbase
-
-  velo_Object = VeloObject.new 'Object', []
-
-  velo_Object.set 'extend', VeloMethod.new('extend', proc { |obj, args|
-    obj.extend args[0]
-  })
-
-  velo_Object.set 'foo', VeloMethod.new('foo', proc { |obj, args|
+  $debug = true
+  $Object.set 'foo', VeloMethod.new('foo', proc { |obj, args|
     puts "foo method called on #{obj} with args #{args}!"
   })
-
-  velo_String = VeloObject.new 'String', [velo_Object]
-  velo_String.set 'bar', VeloMethod.new('bar', proc { |obj, args|
+  $String.set 'bar', VeloMethod.new('bar', proc { |obj, args|
     puts "bar method called on #{obj} with args #{args}!"
   })
 
-  velo_Shimmy = VeloObject.new 'Shimmy', [velo_Object]
-  velo_Shimmy.call 'extend', [velo_String]
+  velo_Shimmy = VeloObject.new 'Shimmy'
+  velo_Shimmy.call 'extend', [$String]
   velo_Shimmy.call 'bar', [1,2,3]
 end

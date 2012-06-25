@@ -1,6 +1,9 @@
 Velo
 ====
 
+> "Jaws was never my scene, and I don't like Star Wars."
+> -- Queen, "Bicycle Race"
+
 Velo is an object-oriented language, inspired somewhat by Ruby,
 and sharing somewhat Robin's "radically goo-oriented" approach.
 
@@ -235,6 +238,12 @@ Which means a script can have methods.
     | announce
     = This is Vern
 
+Note that, unlike Ruby, this method is actually defined on the script.
+(When a method is defined at the toplevel in Ruby, it is actually placed
+in `Kernel`, and placed on `Object` as a private method.  There is probably
+some historical or byzantine architectural reason for this, but it struck me
+as quite bizarre when I learned about it.)
+
 So, yeah, `method` is a method on strings too, just like `create`.  It takes
 no arguments.
 
@@ -253,6 +262,23 @@ The block used to define a method is, of course, just a string.
     | announce = a.method
     | announce {Naoko}
     = This is Naoko
+
+A method may be recursive.
+
+    | count = {
+    |   temp = #1
+    |   if (temp.equals {XXXXXX}), { IO.print {Done!}}, {
+    |     IO.print temp
+    |     count temp.concat {X}
+    |   }
+    | }.method
+    | count {X}
+    = X
+    = XX
+    = XXX
+    = XXXX
+    = XXXXX
+    = Done!
 
 Note, however, that a method is not a Velo object, at least not in this
 early version of Velo.  The only operation that is defined on the
@@ -489,17 +515,13 @@ Grammar
            | StringLiteral
            .
 
-TODO
-----
+Future Work
+-----------
 
-*   Delineate the scoping rules more rigorously, e.g. figure out where
-    variables local to methods belong.
-*   Possibly unify scripts and strings.  (A script is just a string,
-    after all.)
-*   Possibly unify methods and scripts.  (A method is just a script,
-    after all.)
-*   Talk about how scripts and modules can be unified similarly.
-*   Contrast with Ruby (e.g. toplevel methods being put on `Object`,
-    but as private methods.)
-*   Implement a Velo interpreter, or try to, to shake out the
-    inconsistencies which are doubtless lurking here.
+*   Unify scripts and strings.  (A script is just a string, after all.)
+*   Unify methods and scripts.  (A method is just a script, after all.)
+*   Unify scripts and modules.  (A module is just a script, after all.)
+    Unfortunately, the Falderal format doesn't make this easy to
+    illustrate; but there is no reason that we shouldn't be able to
+    load external files as objects.
+

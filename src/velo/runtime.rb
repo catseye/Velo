@@ -120,8 +120,8 @@ $Object.set 'if', VeloMethod.new('if', proc { |obj, args|
   debug args
   method = nil
   choice = args[0].contents.empty? ? 2 : 1
-  method = args[choice].lookup 'eval'
-  method.run args[choice], []
+  method = args[choice].lookup 'create'
+  method.run args[choice], [obj]
 })
 
 $String = VeloObject.new 'String'
@@ -150,12 +150,6 @@ $String.set 'equals', VeloMethod.new('equals', proc { |obj, args|
   else
     make_string_literal ""
   end
-})
-$String.set 'eval', VeloMethod.new('eval', proc { |obj, args|
-  p = Parser.new obj.contents
-  s = p.script
-  # XXX args? really? ok, I suppose maybe so.
-  s.eval obj, args
 })
 
 $IO = VeloObject.new 'IO'

@@ -1,0 +1,3 @@
+Jonkers = {
+  IO.print {Hello}
+}.create new

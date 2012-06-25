@@ -216,15 +216,15 @@ Lines 1 and 2 above are equivalent, but line 3 is different.
 Now, about those Methods
 ------------------------
 
-Typically, a class will define some methods.
+Typically, a class will define some methods.  (For now, let's think of them
+as class methods.)
 
     | Jonkers = {
     |   announce = {
     |     IO.print {This is }.concat {Maeve}
     |   }.method
     | }.create new
-    | j = Jonkers.new
-    | j.announce
+    | Jonkers.announce
     = This is Maeve
 
 Which means a script can have methods.
@@ -235,10 +235,11 @@ Which means a script can have methods.
     | announce
     = This is Vern
 
-So, yeah, `method` is a method on strings too, just like `class`.  The
-argument is a string which is a list of formal parameter names.
+So, yeah, `method` is a method on strings too, just like `create`.  It takes
+no arguments.
 
-Methods can have arguments:
+But, methods can have arguments, when called.  In their definition, the
+first argument is referred to by `#1`, the second by `#2`, etc.
 
     | announce = {
     |   IO.print {This is }.concat #1
@@ -248,9 +249,9 @@ Methods can have arguments:
 
 The block used to define a method is, of course, just a string.
 
-    | a = {IO.print {This is Naoko}}
+    | a = {IO.print {This is }.concat #1}
     | announce = a.method
-    | announce
+    | announce {Naoko}
     = This is Naoko
 
 Note, however, that a method is not a Velo object, at least not in this
@@ -259,6 +260,47 @@ result of calling the `method` method on a string, is assigning it to
 an attribute of an object, from whence it can be called.  Trying to
 do anything else to it (pass it to another method, for example) is not
 defined.
+
+Instantiation
+-------------
+
+Classes can be instantiated.
+
+    | Jonkers = {
+    |   announce = {
+    |     IO.print {This is }.concat #1
+    |   }.method
+    | }.create new
+    | j = new; j.extend Jonkers
+    | j.announce {Jamil}
+    | k = new; k.extend Jonkers
+    | k.announce {Brian}
+    = This is Jamil
+    = This is Brian
+
+Instances of classes have their own attributes, but obtain anything
+they might be missing, from the class.
+
+    | Jonkers = {
+    |   name = {Cheryl}
+    |   announce = {
+    |     IO.print {This is }.concat name
+    |   }.method
+    | }.create new
+    | 
+    | j = new; j.extend Jonkers
+    | j.announce
+    | k = new; k.extend Jonkers
+    | { name = {David} }.create k
+    | k.announce
+    = This is Cheryl
+    = This is David
+
+We said `{ name = {David} }.create k` above because we can't simply
+say `k.name = {David}` yet.
+
+Given what you see above, you might be wondering exactly the difference
+between classes and objects is.  Well...
 
 Delegation
 ----------
@@ -280,10 +322,9 @@ object as "self".
     |     print {This is }.concat #1
     |   }.method
     | }.create new
-    | Jeepers = {
-    |   extend Jonkers
-    | }.create new
-    | j = Jeepers.new
+    | Jeepers = new; Jeepers.extend Jonkers
+    | 
+    | j = new; j.extend Jeepers
     | j.announce {Luke}
     = This is Luke
 
@@ -330,19 +371,29 @@ recently executed `extend`s are searched before those added by
 earlier executed `extend`s.
 
     | Jonkers = {
-    |   foo = { {fourteen} }.method
+    |   foo = { IO.print {fourteen} }.method
     | }.create new
     | Jeepers = {
-    |   foo = { {twenty-nine} }.method
+    |   foo = { IO.print {twenty-nine} }.method
     | }.create new
+    | 
     | Jeskers = {
-    |   extend Jonkers
-    |   extend Jeepers
     |   bar = { foo }.method
     | }.create new
-    | j = Jeskers.new
-    | IO.print j.bar
+    | Jeskers.extend Jonkers
+    | Jeskers.extend Jeepers
+    | 
+    | j = new; j.extend Jeskers; j.bar
+    | 
+    | Jofters = {
+    |   bar = { foo }.method
+    | }.create new
+    | Jofters.extend Jeepers
+    | Jofters.extend Jonkers
+    | 
+    | j = new; j.extend Jofters; j.bar
     = twenty-nine
+    = fourteen
 
 `self`
 ------
@@ -357,16 +408,18 @@ which simply returns the object it is called on.  Since all objects
 effectively "inherit" (read: delegate to, when all other options
 are exhausted) from `Object`, they can all use this "explicit self".
 
+    | a = {X}
+    | IO.print a.equals(a.self)
+    = true
+
     | McTavish = {
-    |   bar = { #1.hey }.method
+    |   bar = { a = #1; a.hey }.method
     | }.create new
     | Jeskers = {
-    |   bar = { #1.bar self }.method
+    |   bar = { a = #1; a.bar self }.method
     |   hey = { IO.print {Hey!} }.method
     | }.create new
-    | m = McTavish.new
-    | j = Jeskers.new
-    | j.bar m
+    | Jeskers.bar McTavish
     = Hey!
 
 Appendix

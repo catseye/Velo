@@ -107,7 +107,7 @@ $Object.set 'extend', VeloMethod.new('extend', proc { |obj, args|
   obj.extend args[0]
 })
 $Object.set 'self', VeloMethod.new('self', proc { |obj, args|
-  raise VeloMethodNotImplemented
+  obj
 })
 $Object.set 'new', VeloMethod.new('new', proc { |obj, args|
   VeloObject.new 'new' # this always extends $Object... we may not want that.

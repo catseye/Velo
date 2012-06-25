@@ -1,7 +1,7 @@
 Velo
 ====
 
-> "Jaws was never my scene, and I don't like Star Wars."
+> "Jaws was never my scene, and I don't like Star Wars."  
 > -- Queen, "Bicycle Race"
 
 Velo is an object-oriented language, inspired somewhat by Ruby,
@@ -74,6 +74,10 @@ that you necessarily take a performance hit.
     | if ({X}.equals {X}), yes, no
     = Yes
 
+(The above example would be even more persuasive if `yes` and `no`
+were constructed from user input, or a random selection, but those
+are more difficult to present as readable, automated test cases.)
+
 Scripts as Classes
 ------------------
 
@@ -113,7 +117,7 @@ class:
 Our demonstrations above show that a class has a "body" of code which
 is run when it is defined with `create`.
 
-The block used to define a class, of course, just a string, and can be
+The block used to define a class, of course, is just a string, and can be
 a string variable.
 
     | a = {extend IO; print {What?}}
@@ -167,6 +171,8 @@ markers, with a few qualifications:
 *   An end-of-line marker can optionally appear before any expression
     in a script, so that blank lines can appear at the start of a script.
 
+Some examples of these properties follow.
+
     | IO.print {Hi}; IO.print {there}
     = Hi
     = there
@@ -201,7 +207,6 @@ that you want (but of course, the method may fail if it is not given the
 number it expects.)  The parser tells when a method call ends by the
 fact that there are no more commas (it instead ran into a `)` or an
 end-of-line marker or the end of the file.)
-
 
 Method calls can be chained:
 

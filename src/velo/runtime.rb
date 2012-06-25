@@ -110,7 +110,11 @@ $Object.set 'self', VeloMethod.new('self', proc { |obj, args|
   obj
 })
 $Object.set 'new', VeloMethod.new('new', proc { |obj, args|
-  VeloObject.new 'new' # this always extends $Object... we may not want that.
+  o = VeloObject.new 'new'
+  if not args[0].nil?
+    o.extend args[0]
+  end
+  o
 })
 $Object.set 'if', VeloMethod.new('if', proc { |obj, args|
   debug args

@@ -264,7 +264,25 @@ defined.
 Instantiation
 -------------
 
-Classes can be instantiated.
+Classes can be instantiated.  The most straightforward way to do this
+is to use the `new` method we already discussed; in truth, it takes an
+optional argument, and if this is given, the new object extends the object
+passed to `new`.
+
+    | Jonkers = {
+    |   announce = {
+    |     IO.print {This is }.concat #1
+    |   }.method
+    | }.create new
+    | j = new Jonkers
+    | j.announce {Jamil}
+    | k = new Jonkers
+    | k.announce {Brian}
+    = This is Jamil
+    = This is Brian
+
+This usage of `new` is just a shortcut, because you can always `extend`
+the new object yourself.
 
     | Jonkers = {
     |   announce = {
@@ -273,10 +291,7 @@ Classes can be instantiated.
     | }.create new
     | j = new; j.extend Jonkers
     | j.announce {Jamil}
-    | k = new; k.extend Jonkers
-    | k.announce {Brian}
     = This is Jamil
-    = This is Brian
 
 Instances of classes have their own attributes, but obtain anything
 they might be missing, from the class.
@@ -288,16 +303,16 @@ they might be missing, from the class.
     |   }.method
     | }.create new
     | 
-    | j = new; j.extend Jonkers
+    | j = new Jonkers
     | j.announce
-    | k = new; k.extend Jonkers
+    | k = new Jonkers
     | { name = {David} }.create k
     | k.announce
     = This is Cheryl
     = This is David
 
-We said `{ name = {David} }.create k` above because we can't simply
-say `k.name = {David}` yet.
+(We said `{ name = {David} }.create k` above because we can't simply
+say `k.name = {David}` yet.  This would be a nice thing to fix...)
 
 Given what you see above, you might be wondering exactly the difference
 between classes and objects is.  Well...
@@ -322,11 +337,23 @@ object as "self".
     |     print {This is }.concat #1
     |   }.method
     | }.create new
-    | Jeepers = new; Jeepers.extend Jonkers
+    | Jeepers = {
+    |   extend IO
+    |   greet = {
+    |     print {Hello, }.concat #1
+    |   }.method
+    | }.create new
+    | Jeepers.extend Jonkers
     | 
-    | j = new; j.extend Jeepers
+    | j = new Jeepers
     | j.announce {Luke}
+    | j.greet {Luke}
     = This is Luke
+    = Hello, Luke
+
+(We had to say `Jeepers.extend Jonkers` in the above, instead of saying
+`extend Jonkers` in the definition of Jeepers, because inside that
+definition, Jonkers was not in scope.  This would be a nice thing to fix...)
 
 When you say `extend`, you are just adding another object to the list
 of parent objects for a class.
@@ -352,7 +379,7 @@ a class that it defines:
     | announce {Ike}
     = This is Ike
 
-The block given to `extend` is just a string, of course.
+The class doesn't even have to be given a name.
 
     | extend {extend IO; p = {print #1}.method}.create new
     | p {Hello!}
@@ -383,7 +410,7 @@ earlier executed `extend`s.
     | Jeskers.extend Jonkers
     | Jeskers.extend Jeepers
     | 
-    | j = new; j.extend Jeskers; j.bar
+    | j = new Jeskers; j.bar
     | 
     | Jofters = {
     |   bar = { foo }.method
@@ -391,7 +418,7 @@ earlier executed `extend`s.
     | Jofters.extend Jeepers
     | Jofters.extend Jonkers
     | 
-    | j = new; j.extend Jofters; j.bar
+    | j = new Jofters; j.bar
     = twenty-nine
     = fourteen
 

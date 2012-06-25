@@ -77,13 +77,23 @@ Scripts as Classes
 Classes can be defined within a script:
 
     | Jonkers = {
-    |   extend IO
-    |   print {What?}
-    | }.class
-    | Jonkers.new
+    |   IO.print {What?}
+    | }.create new
     = What?
 
-Note that `class` is a method on strings.
+Note that `create` is a method on strings, and it takes a parameter,
+which in this case is the result of calling the method `new` (to be
+explained later.)  The class itself has a "body" of code which is run when
+the class is defined, not unlike the situation in Ruby.  This code can be
+used to set up class-level attributes:
+
+    | Jonkers = {
+    |   name = {Ulysses}
+    | }.create new
+    | IO.print Jonkers.name
+    = Ulysses
+
+Normally a class will also have some methods, but we'll cover that later.
 
 The fact that classes can be defined in a script, and that scripts are
 no different from classes, means that classes can be defined within a
@@ -93,56 +103,45 @@ class:
     |   Fordible = {
     |     extend IO
     |     print {Sure}
-    |   }.class
-    |   Fordible.new
-    | }.class
-    | Jonkers.new
+    |   }.create new
+    | }.create new
     = Sure
 
 Our demonstrations above show that a class has a "body" of code which
-is run when it is instantiated by a call to its `new` method -- more
-or less, just like a script.  No particular constructor method is needed,
-as the code inside the class can take care of initializing the instance.
-
-Note that this differs from how code like this is handled in Ruby; in
-that language, the code inside the class is executed when the class is
-defined.  In Velo, it is only run when the class is instantiated.
-
-(Note: I don't think the preceding idea is practicable anymore.
-That code needs to run to set up the (class) object, and we shan't
-artificially distinguish between subsets of that code for different
-purposes.  We probably need something like Ruby's `initialize`.)
-
-    | Jonkers = {
-    |   extend IO
-    |   print {Sure}
-    | }.class
-    | Jonkers.new
-    | Jonkers.new
-    = Sure
-    = Sure
-
-    | extend IO
-    | Jonkers = {
-    |   Fordible = {
-    |     extend IO
-    |     print {Sure}
-    |   }.class
-    |   Fordible.new
-    | }.class
-    | print {Done}
-    = Done
+is run when it is defined with `create`.
 
 The block used to define a class, of course, just a string, and can be
 a string variable.
 
     | a = {extend IO; print {What?}}
-    | Jonkers = a.class
+    | Jonkers = a.create new
     | Jonkers.new
     = What?
 
-    | {extend IO; print {Yes!}}.class.new
+    | {extend IO; print {Yes!}}.create new
     = Yes!
+
+What's happening here is actually this.
+
+The `new` method, inherited from `Object`, creates a new, almost
+featureless object; its only feature is that it inherits from `Object`.
+
+    | a = new
+    | a.IO.print {A new object inherits IO from Object.}
+    = A new object inherits IO from Object.
+
+The `create` method, inherited from `String`, runs its receiver, as a
+script, on the object passed to it.  This may seem an odd usage of the
+word "create", as in our examples above, it's actually `new` that
+creates the object.  But in English, the word "create" does sometimes
+have this meaning; for example, a royal subject can be "created a knight".
+And, in Velo, there is nothing preventing you from passing an existing
+object to `create`.
+
+    | Jonkers = {foo = {123}}.create new
+    | {bar = {456}}.create Jonkers
+    | IO.print Jonkers.bar
+    = 456
 
 Aside on Syntax
 ---------------
@@ -162,6 +161,35 @@ markers, with a few qualifications:
     is considered a single end-of-line marker.
 *   An end-of-line marker can optionally occur after the tokens `(`,
     `=`, and `,`, without terminating the expression.
+*   An end-of-line marker can optionally appear before any expression
+    in a script, so that blank lines can appear at the start of a script.
+
+    | IO.print {Hi}; IO.print {there}
+    = Hi
+    = there
+
+    | 
+    | 
+    | IO.print {Hi}
+    | 
+    | 
+    | IO.print {there}
+    = Hi
+    = there
+
+    | IO.print (
+    |   {Hi there})
+    = Hi there
+
+    | a =
+    |   {Hi there}
+    | IO.print a
+    = Hi there
+
+    | if {true},
+    |   {IO.print {Yes}},
+    |   {IO.print {No}}
+    = Yes
 
 A method call is followed by a list of arguments seperated by commas.
 (You saw this above with the `if` method.)  Velo does not statically
@@ -170,6 +198,7 @@ that you want (but of course, the method may fail if it is not given the
 number it expects.)  The parser tells when a method call ends by the
 fact that there are no more commas (it instead ran into a `)` or an
 end-of-line marker or the end of the file.)
+
 
 Method calls can be chained:
 
@@ -193,7 +222,7 @@ Typically, a class will define some methods.
     |   announce = {
     |     IO.print {This is }.concat {Maeve}
     |   }.method
-    | }.class
+    | }.create new
     | j = Jonkers.new
     | j.announce
     = This is Maeve
@@ -250,10 +279,10 @@ object as "self".
     |   announce = {
     |     print {This is }.concat #1
     |   }.method
-    | }.class
+    | }.create new
     | Jeepers = {
     |   extend Jonkers
-    | }.class
+    | }.create new
     | j = Jeepers.new
     | j.announce {Luke}
     = This is Luke
@@ -277,14 +306,14 @@ a class that it defines:
     |   announce = {
     |     print {This is }.concat #1
     |   }.method
-    | }.class
+    | }.create new
     | extend Jonkers
     | announce {Ike}
     = This is Ike
 
 The block given to `extend` is just a string, of course.
 
-    | extend {extend IO; p = {print #1}.method}.class
+    | extend {extend IO; p = {print #1}.method}.create new
     | p {Hello!}
     = Hello!
 
@@ -302,15 +331,15 @@ earlier executed `extend`s.
 
     | Jonkers = {
     |   foo = { {fourteen} }.method
-    | }.class
+    | }.create new
     | Jeepers = {
     |   foo = { {twenty-nine} }.method
-    | }.class
+    | }.create new
     | Jeskers = {
     |   extend Jonkers
     |   extend Jeepers
     |   bar = { foo }.method
-    | }.class
+    | }.create new
     | j = Jeskers.new
     | IO.print j.bar
     = twenty-nine
@@ -330,11 +359,11 @@ are exhausted) from `Object`, they can all use this "explicit self".
 
     | McTavish = {
     |   bar = { #1.hey }.method
-    | }.class
+    | }.create new
     | Jeskers = {
     |   bar = { #1.bar self }.method
     |   hey = { IO.print {Hey!} }.method
-    | }.class
+    | }.create new
     | m = McTavish.new
     | j = Jeskers.new
     | j.bar m

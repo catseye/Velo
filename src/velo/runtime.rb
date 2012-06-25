@@ -41,8 +41,9 @@ class VeloObject
     "VeloObject('#{@title}')"
   end
 
-  def set ident, method
-    @attrs[ident] = method
+  def set ident, obj
+    @attrs[ident] = obj
+    debug "set #{ident} to #{obj} on #{self}"
   end
 
   # let this object delegate to another object
@@ -109,7 +110,7 @@ $Object.set 'self', VeloMethod.new('self', proc { |obj, args|
   raise VeloMethodNotImplemented
 })
 $Object.set 'new', VeloMethod.new('new', proc { |obj, args|
-  raise VeloMethodNotImplemented
+  VeloObject.new 'new' # this always extends $Object... we may not want that.
 })
 $Object.set 'if', VeloMethod.new('if', proc { |obj, args|
   debug args
@@ -124,8 +125,11 @@ $String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
   debug "concat #{obj} #{args[0]}"
   make_string_literal(obj.contents + args[0].contents)
 })
-$String.set 'class', VeloMethod.new('class', proc { |obj, args|
-  raise VeloMethodNotImplemented
+$String.set 'create', VeloMethod.new('class', proc { |obj, args|
+  p = Parser.new obj.contents
+  s = p.script
+  s.eval args[0], []
+  args[0]
 })
 $String.set 'method', VeloMethod.new('method', proc { |obj, args|
   # obj is the string to turn into a method

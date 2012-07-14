@@ -1,6 +1,8 @@
 Velo
 ====
 
+_Language version 0.1, distribution revision 2012.0714_
+
 > "Jaws was never my scene, and I don't like Star Wars."  
 > -- Queen, "Bicycle Race"
 
@@ -41,7 +43,7 @@ Strings as Blocks
 
 Conditional statements are implemented by a method called `if`.
 This method is on the root object, called `Object`, from which all
-objects, including your script, inherit.
+objects, including your script, descend.
 
     | if ({X}.equals {X}), {IO.print {Yes}}, {IO.print {No}}
     = Yes
@@ -488,7 +490,7 @@ Appendix
 Summary of methods on `Object`
 ------------------------------
 
-*   `extend` <string>
+*   `extend` STRING
 *   `self`
 *   `new` ...
 *   `Object`, `String`, `IO`, and all other predefined classes
@@ -496,17 +498,17 @@ Summary of methods on `Object`
 Summary of methods on `String`
 ------------------------------
 
-*   `if` <string>, <string>
-*   `while` <string>
+*   `if` STRING, STRING
+*   `while` STRING
 *   `class`
-*   `method` <string>
-*   `concat` <string>
-*   `eval` <string>
+*   `method` STRING
+*   `concat` STRING
+*   `eval` STRING
 
 Summary of methods on `IO`
 --------------------------
 
-*   `print` <string>
+*   `print` STRING
 *   `input`
 
 Grammar

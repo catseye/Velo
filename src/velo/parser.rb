@@ -107,8 +107,7 @@ class Parser
       debug "parsing ident"
       ident = @scanner.text
       @scanner.scan
-      # XXX is there a Self I can use??
-      return Lookup.new(nil, ident)
+      return Lookup.new(Self.new, ident)
     else
       raise VeloSyntaxError, "unexpected '#{@scanner.text}'"
     end

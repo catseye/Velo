@@ -34,20 +34,22 @@ class Script < AST
 end
 
 class Assignment < AST
-  def initialize ident, expr
-    @ident = ident
+  def initialize object, field, expr
+    @object = object
+    @field = field
     @expr = expr
   end
 
   def eval obj, args
     debug "eval #{self} on #{obj} with #{args}"
-    e = @expr.eval obj, args
-    obj.set @ident, e
-    e
+    val = @expr.eval obj, args
+    me = @object.eval obj, args
+    me.set @field, val
+    val
   end
 
   def to_s
-    "Assignment(#{@ident},#{@expr})"
+    "Assignment(#{@object},#{@field},#{@expr})"
   end
 end
 

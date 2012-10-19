@@ -43,8 +43,11 @@ class Assignment < AST
   def eval obj, args
     debug "eval #{self} on #{obj} with #{args}"
     val = @expr.eval obj, args
-    me = @object.eval obj, args
-    me.set @field, val
+    receiver = @object.eval obj, args
+    if receiver.is_a? VeloMethod
+      receiver = receiver.run obj, []
+    end
+    receiver.set @field, val
     val
   end
 
@@ -92,6 +95,9 @@ class Lookup < AST
   def eval obj, args
     debug "eval #{self} on #{obj} with #{args}"
     receiver = @receiver.eval obj, args
+    if receiver.is_a? VeloMethod
+      receiver = receiver.run obj, []
+    end
     receiver.lookup @ident
   end
 

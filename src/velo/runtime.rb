@@ -47,7 +47,7 @@ class VeloObject
   end
 
   # let this object delegate to another object
-  def extend obj
+  def velo_extend obj
     debug "extending #{self} w/#{obj}"
     @parents.unshift obj
   end
@@ -95,7 +95,7 @@ end
 
 def make_string_literal text
   o = VeloObject.new "#{@text}"
-  o.extend $String
+  o.velo_extend $String
   o.contents = text
   o
 end
@@ -104,7 +104,7 @@ end
 
 $Object = VeloObject.new 'Object'
 $Object.set 'extend', VeloMethod.new('extend', proc { |obj, args|
-  obj.extend args[0]
+  obj.velo_extend args[0]
 })
 $Object.set 'self', VeloMethod.new('self', proc { |obj, args|
   obj
@@ -112,7 +112,7 @@ $Object.set 'self', VeloMethod.new('self', proc { |obj, args|
 $Object.set 'new', VeloMethod.new('new', proc { |obj, args|
   o = VeloObject.new 'new'
   if not args[0].nil?
-    o.extend args[0]
+    o.velo_extend args[0]
   end
   o
 })
@@ -173,6 +173,6 @@ if $0 == __FILE__
   })
 
   velo_Shimmy = VeloObject.new 'Shimmy'
-  velo_Shimmy.extend $String
+  velo_Shimmy.velo_extend $String
   (velo_Shimmy.lookup 'bar').run velo_Shimmy, [1,2,3]
 end

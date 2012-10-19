@@ -32,7 +32,7 @@ class Scanner
 
   def scan
     scan_impl
-    #debug "scanned '#{@text}' (#{@type})"
+    debug "scanned '#{@text}' (#{@type})"
     return @text
   end
 

@@ -20,14 +20,12 @@ debug "loading parser"
 # Refactored to be LL(1):
 
 # Velo ::= {[EOL] Expr EOL}.
-# Expr ::= Name [Assn | Rest]
-#        | "(" [EOL] Expr ")" [Rest]
-#        | StringLiteral [Rest]
+# Expr ::= Base {"." [EOL] Name} ["=" [EOL] Expr | Expr {"," [EOL] Expr}].
+# Base ::= Name
 #        | ArgumentRef
+#        | StringLiteral
+#        | "(" [EOL] Expr ")"
 #        .
-# Assn ::= "=" [EOL] Expr
-# Rest ::= "." [EOL] Rest
-#        | Expr {"," [EOL] Expr}
 
 class Parser
   def initialize s
@@ -51,40 +49,72 @@ class Parser
   def expr
     debug "parsing Expr production"
     if @scanner.type == 'EOF'
-      nil
-    elsif @scanner.consume "("
+      return nil
+    end
+    receiver = base  # could be Expr, StringLit, Arg, Ident
+    if @scanner.type == 'EOF'
+      return receiver
+    end
+    while @scanner.consume '.'
+      @scanner.consume_type 'EOL'
+      debug "parsing .ident"
+      ident = @scanner.text
+      @scanner.scan
+      receiver = Lookup.new(receiver, ident)
+    end
+    if @scanner.consume '='
+      debug "parsing assignment"
+      @scanner.consume_type 'EOL'
+      e = expr
+      # assign to last thing in lookup chain... urgh.  maybe turn into method call?
+      return Assignment.new(ident, e)
+    elsif @scanner.type == 'EOF' or @scanner.type == 'EOL'
+      debug "not a method call"
+      return receiver
+    else
+      debug "parsing method call args"
+      args = []
+      e = expr
+      args.push(e) unless e.nil?
+      while @scanner.consume ","
+        @scanner.consume_type 'EOL'
+        e = expr
+        args.push(e) unless e.nil?
+      end
+      MethodCall.new(receiver, args)
+    end
+  end
+
+  def base
+    debug "parsing Base production"
+    if @scanner.consume "("
       debug "parsing parens"
       @scanner.consume_type 'EOL'
       e = expr
       @scanner.expect ")"
-      rest e, false
+      return e
     elsif @scanner.type == 'strlit'
       debug "parsing strlit"
       s = @scanner.text
       @scanner.scan
-      rest StringLiteral.new(s), false
+      return StringLiteral.new(s)
     elsif @scanner.type == 'arg'
       debug "parsing arg"
       num = @scanner.text.to_i
       @scanner.scan
-      rest Argument.new(num), false
+      return Argument.new(num)
     elsif @scanner.type == 'ident'
       debug "parsing ident"
       ident = @scanner.text
       @scanner.scan
-      if @scanner.consume "="
-        debug "parsing assignment"
-        @scanner.consume_type 'EOL'
-        return Assignment.new(ident, expr)
-      end
-      # we now parse the rest of the expression.  If there is no rest of
-      # the expression, though, we want to make sure this is a method call.
-      rest Lookup.new(Self.new, ident), true
+      # XXX is there a Self I can use??
+      return Lookup.new(nil, ident)
     else
       raise VeloSyntaxError, "unexpected '#{@scanner.text}'"
     end
   end
 
+  # no longer used -- goofy.
   def rest receiver, is_call
     debug "parsing Rest (of Expr) production"
     if @scanner.consume "."

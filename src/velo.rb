@@ -7,9 +7,14 @@ require 'velo/runtime'
 
 ############ Main ############
 
+ast = false
 ARGV.each do |arg|
   if arg == '--debug'
     $debug = true
+    next
+  end
+  if arg == '--ast'
+    ast = true
     next
   end
   File.open(arg, 'r') do |f|
@@ -19,7 +24,11 @@ ARGV.each do |arg|
     end
     p = Parser.new(text)
     s = p.script
-    o = VeloObject.new 'main-script'
-    s.eval o, []   # XXX could pass command-line arguments here...
+    if ast
+      puts s
+    else
+      o = VeloObject.new 'main-script'
+      s.eval o, []   # XXX could pass command-line arguments here...
+    end
   end
 end

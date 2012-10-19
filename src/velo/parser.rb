@@ -48,11 +48,11 @@ class Parser
 
   def expr
     debug "parsing Expr production"
-    if @scanner.type == 'EOF'
+    if (['EOL', 'EOF'].include? @scanner.type or [')', ','].include? @scanner.text)
       return nil
     end
     receiver = base  # could be Expr, StringLit, Arg
-    if @scanner.type == 'EOF'
+    if (['EOL', 'EOF'].include? @scanner.type or [')', ','].include? @scanner.text)
       return receiver
     end
     while @scanner.consume '.'
@@ -68,7 +68,7 @@ class Parser
       # lookup(a, b).set(c, foo)
       debug "unlookuping"
       ident = nil
-      if receiver.instance_of? Lookup
+      if receiver.is_a? Lookup
         ident = receiver.ident
         receiver = receiver.receiver
       else

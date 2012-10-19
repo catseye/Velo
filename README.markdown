@@ -344,8 +344,24 @@ they might be missing, from the class.
     = This is Cheryl
     = This is David
 
-(We said `{ name = {David} }.create k` above because we can't simply
-say `k.name = {David}` yet.  This would be a nice thing to fix...)
+We said `{ name = {David} }.create k` above because, when the test was
+written, we couldn't say simply `k.name = {David}` yet.  Now we can, so
+let's try that:
+
+    | Jonkers = {
+    |   name = {James}
+    |   announce = {
+    |     IO.print {This is }.concat name
+    |   }.method
+    | }.create new
+    | 
+    | j = new Jonkers
+    | j.announce
+    | k = new Jonkers
+    | k.name = {Joyce}
+    | k.announce
+    = This is James
+    = This is Joyce
 
 Given what you see above, you might be wondering exactly the difference
 between classes and objects is.  Well...

@@ -16,10 +16,15 @@ class VeloMethod
   def initialize title, fun
     @title = title
     @fun = fun
+    @obj = nil
   end
 
-  def run obj, args
-    @fun.call obj, args
+  def bind_object obj
+    @obj = obj
+  end
+
+  def run args
+    @fun.call @obj, args
   end
   
   def to_s
@@ -59,6 +64,10 @@ class VeloObject
     debug "lookup result: #{result}"
     if result.nil?
       raise VeloAttributeNotFound, "could not locate '#{ident}' on #{self}"
+    end
+    if result.is_a? VeloMethod
+      debug "binding obtained method #{result} to object #{self}"
+      result.bind_object self
     end
     result
   end
@@ -121,7 +130,7 @@ $Object.set 'if', VeloMethod.new('if', proc { |obj, args|
   method = nil
   choice = args[0].contents.empty? ? 2 : 1
   method = args[choice].lookup 'create'
-  method.run args[choice], [obj]
+  method.run [obj]
 })
 
 $String = VeloObject.new 'String'
@@ -174,5 +183,5 @@ if $0 == __FILE__
 
   velo_Shimmy = VeloObject.new 'Shimmy'
   velo_Shimmy.velo_extend $String
-  (velo_Shimmy.lookup 'bar').run velo_Shimmy, [1,2,3]
+  (velo_Shimmy.lookup 'bar').run [1,2,3]
 end

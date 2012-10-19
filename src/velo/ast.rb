@@ -44,9 +44,7 @@ class Assignment < AST
     debug "eval #{self} on #{obj} with #{args}"
     val = @expr.eval obj, args
     receiver = @object.eval obj, args
-    if receiver.is_a? VeloMethod
-      receiver = receiver.run obj, []
-    end
+    debug "setting #{@field} on #{receiver}"
     receiver.set @field, val
     val
   end
@@ -61,10 +59,6 @@ end
 class Self < AST
   def eval obj, args
     debug "eval #{self} on #{obj} with #{args}"
-    obj
-  end
-
-  def find_receiver obj, args
     obj
   end
 
@@ -87,17 +81,9 @@ class Lookup < AST
     @ident
   end
 
-  def find_receiver obj, args
-    debug "find_receiver #{self}"
-    @receiver.eval obj, args
-  end
-
   def eval obj, args
     debug "eval #{self} on #{obj} with #{args}"
     receiver = @receiver.eval obj, args
-    if receiver.is_a? VeloMethod
-      receiver = receiver.run obj, []
-    end
     receiver.lookup @ident
   end
 
@@ -120,12 +106,12 @@ class MethodCall < AST
     end
     method = @method_expr.eval obj, args
     debug "arguments evaluated, now calling #{@method_expr} -> #{method}"
-    receiver = @method_expr.find_receiver obj, args
     if method.is_a? VeloMethod
-      debug "running real method #{method} w/args #{args}, receiver=#{receiver}"
-      method.run receiver, new_args
+      # xxx show receiver (method's bound object) in debug
+      debug "running real method #{method} w/args #{args}"
+      method.run new_args
     else
-      debug "just returning non-method (#{method}) on call, receiver=#{receiver}"
+      debug "just returning non-method (#{method}) on call"
       method
     end
   end

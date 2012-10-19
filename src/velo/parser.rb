@@ -53,14 +53,14 @@ class Parser
     end
     receiver = base  # could be Expr, StringLit, Arg
     if (['EOL', 'EOF'].include? @scanner.type or [')', ','].include? @scanner.text)
-      return receiver
+      return MethodCall.new(receiver, [])
     end
     while @scanner.consume '.'
       @scanner.consume_type 'EOL'
       debug "parsing .ident"
       ident = @scanner.text
       @scanner.scan
-      receiver = Lookup.new(receiver, ident)
+      receiver = Lookup.new(MethodCall.new(receiver, []), ident)
     end
     if @scanner.consume '='
       # this is an assignment, so we must resolve the reciever chain
@@ -83,7 +83,7 @@ class Parser
       # as follows: a.b.c becomes
       # lookup(lookup(a, b), c)
       debug "not a method call"
-      return receiver
+      return MethodCall.new(receiver, [])
     else
       # this is a method call, so we must resolve the reciever chain
       # as follows: a.b.c args becomes
@@ -126,34 +126,6 @@ class Parser
       return Lookup.new(Self.new, ident)
     else
       raise VeloSyntaxError, "unexpected '#{@scanner.text}'"
-    end
-  end
-
-  # no longer used -- goofy.
-  def rest receiver, is_call
-    debug "parsing Rest (of Expr) production"
-    if @scanner.consume "."
-      debug "parsing lookup"
-      @scanner.consume_type 'EOL'
-      ident = @scanner.text
-      @scanner.scan
-      rest Lookup.new(receiver, ident), true
-    elsif (['EOL', 'EOF'].include? @scanner.type or [')', ','].include? @scanner.text)
-      if is_call
-        MethodCall.new(receiver, [])
-      else
-        receiver
-      end
-    else
-      args = []
-      e = expr
-      args.push(e) unless e.nil?
-      while @scanner.consume ","
-        @scanner.consume_type 'EOL'
-        e = expr
-        args.push(e) unless e.nil?
-      end
-      MethodCall.new(receiver, args)
     end
   end
 end

@@ -51,27 +51,40 @@ class Parser
     if @scanner.type == 'EOF'
       return nil
     end
-    receiver = base  # could be Expr, StringLit, Arg, Ident
+    receiver = base  # could be Expr, StringLit, Arg
     if @scanner.type == 'EOF'
       return receiver
     end
+    receiver_chain = []
     while @scanner.consume '.'
       @scanner.consume_type 'EOL'
       debug "parsing .ident"
       ident = @scanner.text
       @scanner.scan
-      receiver = Lookup.new(receiver, ident)
+      receiver_chain.push(ident)
     end
     if @scanner.consume '='
+      # this is an assignment, so we must resolve the reciever chain
+      # as follows: a.b.c = foo becomes
+      # lookup(a, b).set(c, foo)
       debug "parsing assignment"
       @scanner.consume_type 'EOL'
       e = expr
-      # assign to last thing in lookup chain... urgh.  maybe turn into method call?
+      # XXX
       return Assignment.new(ident, e)
     elsif @scanner.type == 'EOF' or @scanner.type == 'EOL'
+      # this is a plain value, so we must resolve the reciever chain
+      # as follows: a.b.c becomes
+      # lookup(lookup(a, b), c)
       debug "not a method call"
+      for ident in receiver_chain
+        receiver = Lookup.new(receiver, ident)
+      end
       return receiver
     else
+      # this is a method call, so we must resolve the reciever chain
+      # as follows: a.b.c args becomes
+      # methodcall(lookup(lookup(a, b), c), args)
       debug "parsing method call args"
       args = []
       e = expr
@@ -80,6 +93,9 @@ class Parser
         @scanner.consume_type 'EOL'
         e = expr
         args.push(e) unless e.nil?
+      end
+      for ident in receiver_chain
+        receiver = Lookup.new(receiver, ident)
       end
       MethodCall.new(receiver, args)
     end

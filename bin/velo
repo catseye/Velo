@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require 'pathname'
+pn = Pathname.new(File.dirname(__FILE__)) + '../src'
+$:.push(pn.realpath())
+require 'velo'

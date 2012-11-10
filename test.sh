@@ -2,7 +2,7 @@
 
 cat >test_config <<EOF
     -> Functionality "Interpret Velo Script" is implemented by shell command
-    -> "./velo.rb %(test-file)"
+    -> "bin/velo %(test-file)"
 EOF
-cd src && falderal test ../test_config ../README.markdown
-rm ../test_config
+falderal test test_config README.markdown
+rm test_config

@@ -194,160 +194,161 @@ s = Script.new({a, Self.new()}); print(s:to_s())
 
 --[[ ========== SCANNER ========= ]]--
 
---[[
+Scanner = {}
+Scanner.new = function(s)
+    local string = s
+    local _text = nil
+    local _type = nil
 
-class Scanner
-  def initialize s
-    @string = s
-    @text = nil
-    @type = nil
-    debug "created scanner with string '#{@string}'"
-    scan
-  end
+    methods = {}
 
-  def text
-    @text
-  end
+    methods.text = function() return _text end
+    methods.type = function() return _type end
 
-  def type
-    @type
-  end
-
-  def eof?
-    @type == 'EOF'
-  end
-
-  def set_token(text, type)
-    @text = text
-    @type = type
-    debug "set_token '#{@text}' (#{@type})"
-    #debug "string now '#{@string}'"
-  end
-
-  def scan
-    scan_impl
-    debug "scanned '#{@text}' (#{@type})"
-    return @text
-  end
-
-  def scan_impl
-    m = /\A[ \t]+/.match @string
-    if not m.nil?
-      @string = m.post_match
-      #debug "consumed whitespace, string now '#{@string}'"
+    methods.is_eof = function()
+        return _type == "EOF"
     end
 
-    if @string.empty?
-      set_token('EOF', 'EOF')
-      return
+    methods.set_token = function(text, type)
+        _text = text
+        _type = type
+        debug "set_token '#{@text}' (#{@type})"
+        --#debug "string now '#{@string}'"
     end
 
-    m = /\A[\r\n;]+/.match @string
-    if not m.nil?
-      while not m.nil?
-        @string = m.post_match
-        m = /\A[ \t]*[\r\n;]+/.match @string
-      end
-      set_token('EOL', 'EOL')
-      return
+    methods.scan = function()
+        methods.scan_impl()
+        debug("scanned " .. _text .. " (" .. _type .. ")")
+        return _text
     end
 
-    # check for any single character tokens
-    m = /\A([(),.;=])/.match @string
-    if m
-      @string = m.post_match
-      set_token(m[1], 'seperator')
-      return
-    end
-
-    # check for arguments
-    m = /\A\#(\d+)/.match @string
-    if m
-      @string = m.post_match
-      set_token(m[1], 'arg')
-      return
-    end
-
-    # check for strings of "word" characters
-    m = /\A(\w+)/.match @string
-    if m
-      @string = m.post_match
-      set_token(m[1], 'ident')
-      return
-    end
-
-    # literal strings
-    if @string[0] == ?{
-      #debug "scanning strlit '#{@string}'"
-      index = 1
-      level = 1
-      while level > 0
-        if @string[index] == ?{
-          level += 1
-        elsif @string[index] == ?}
-          level -= 1
+    methods.scan_impl = function()
+      --[[
+        m = /\A[ \t]+/.match @string
+        if not m.nil?
+          @string = m.post_match
+          #debug "consumed whitespace, string now '#{@string}'"
         end
-        index += 1
-        if index >= @string.length
-          index = @string.length
-          break
+        
+        if @string.empty?
+          set_token('EOF', 'EOF')
+          return
         end
-      end
-      token = @string[1..index-2]
-      @string = @string[index..-1]
-      set_token(token, 'strlit')
-      return
+        
+        m = /\A[\r\n;]+/.match @string
+        if not m.nil?
+          while not m.nil?
+            @string = m.post_match
+            m = /\A[ \t]*[\r\n;]+/.match @string
+          end
+          set_token('EOL', 'EOL')
+          return
+        end
+        
+        # check for any single character tokens
+        m = /\A([(),.;=])/.match @string
+        if m
+          @string = m.post_match
+          set_token(m[1], 'seperator')
+          return
+        end
+        
+        # check for arguments
+        m = /\A\#(\d+)/.match @string
+        if m
+          @string = m.post_match
+          set_token(m[1], 'arg')
+          return
+        end
+        
+        # check for strings of "word" characters
+        m = /\A(\w+)/.match @string
+        if m
+          @string = m.post_match
+          set_token(m[1], 'ident')
+          return
+        end
+        
+        # literal strings
+        if @string[0] == ?{
+          #debug "scanning strlit '#{@string}'"
+          index = 1
+          level = 1
+          while level > 0
+            if @string[index] == ?{
+              level += 1
+            elsif @string[index] == ?}
+              level -= 1
+            end
+            index += 1
+            if index >= @string.length
+              index = @string.length
+              break
+            end
+          end
+          token = @string[1..index-2]
+          @string = @string[index..-1]
+          set_token(token, 'strlit')
+          return
+        end
+        ]]--
+        debug "scanner couldn't scan '#{@string}'"
+
+        methods.set_token('UNKNOWN', 'UNKNOWN')
+    end
+    
+    methods.consume = function(s)
+        if _text == s then
+            methods.scan()
+            return true
+        else
+            return false
+        end
     end
 
-    debug "scanner couldn't scan '#{@string}'"
-
-    set_token('UNKNOWN', 'UNKNOWN')
-  end
-
-  def consume s
-    if @text == s
-      scan
-      true
-    else
-      false
+    methods.consume_type = function(t)
+        if _type == t then
+            methods.scan()
+            return true
+        else
+            return false
+        end
     end
-  end
 
-  def consume_type t
-    if @type == t
-      scan
-      true
-    else
-      false
+    methods.expect = function(s)
+        if _text == s then
+            methods.scan()
+        else
+            raise_VeloSyntaxError("expected '" .. s ..
+                                  "', found '" .. _text .. "'")
+        end
     end
-  end
 
-  def expect s
-    if @text == s
-      scan
-    else
-      raise_VeloSyntaxError("expected '#{s}', found '#{@text}'")
+    methods.expect_types = function(types)
+        local good = false
+        for i,type in ipairs(types) do
+            if type == _type then
+                good = true
+                break
+            end
+        end
+        if not good then
+            raise_VeloSyntaxError("expected '#{t}', found '#{@text}' (#{@type})")
+        end
     end
-  end
 
-  def expect_types set
-    if set.include? @type
-      scan
-    else
-      raise_VeloSyntaxError("expected '#{t}', found '#{@text}' (#{@type})")
-    end
-  end
+    debug("created scanner with string " .. string)
+    -- AND WHOEVER CREATED THIS MUST CALL scan()
+
+    return methods
 end
 
-if $0 == __FILE__
-  $debug = true
-  s = Scanner.new(ARGV[0])
-  until s.eof?
-    s.scan
-  end
+x = Scanner.new("the quick brown fox etc")
+x.scan()
+while not x.is_eof() do
+    print(x.text() .. ":" .. x.type())
+    x.scan()
 end
-
-]]--
 
 --[[ ========== PARSER ========== ]]--
 
@@ -496,12 +497,12 @@ end
 
 --[[ ========== RUNTIME ========= ]]--
 
---[[
+--# the built-in objects, for convenience of other sources
+global_Object = nil
+global_String = nil
+global_IO = nil
 
-# the built-in objects, for convenience of other sources
-$Object = nil
-$String = nil
-$IO = nil
+--[[
 
 # title is for debugging only.  methods themselves do not have names.
 class VeloMethod

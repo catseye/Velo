@@ -35,7 +35,7 @@ Script.new = function(exprs)
     local methods = {}
 
     methods.eval = function(obj, args)
-        debug "eval #{self} on #{obj} with #{args}"
+        debug("eval #{self} on " .. obj.to_s() .. " with #{args}")
         local e = nil
         for i,expr in ipairs(exprs) do
             e = expr.eval(obj, args)
@@ -112,7 +112,7 @@ Lookup.new = function(_receiver, _ident)
     end
 
     methods.eval = function(obj, args)
-        debug "eval #{self} on #{obj} with #{args}"
+        debug("eval " .. methods.to_s() .. " on " .. obj.to_s() .. " with #{args}")
         local receiver = _receiver.eval(obj, args)
         return receiver.lookup(_ident)
     end
@@ -129,19 +129,21 @@ MethodCall.new = function(method_expr, exprs)
     local methods = {}
 
     methods.eval = function(obj, args)
-        debug "eval #{self} on #{obj} with #{args}"
+        debug("eval #{self} on " .. obj.to_s() .. " with #{args}")
         local new_args = {}
         for i,expr in ipairs(exprs) do
-            new_args.push(expr.eval(obj, args))
+            new_args[#new_args+1] = expr.eval(obj, args)
         end
+        debug("obj = " .. obj.to_s())
         local method = method_expr.eval(obj, args)
-        debug "arguments evaluated, now calling #{@method_expr} -> #{method}"
+        debug("arguments evaluated, now calling " ..
+               method_expr.to_s() .. " -> " .. method.to_s())
         if method.class == "VeloMethod" then
             --# xxx show receiver (method's bound object) in debug
             debug "running real method #{method} w/args #{args}"
             return method.run(new_args)
         else
-            debug "just returning non-method (#{method}) on call"
+            debug("just returning non-method (" .. method.to_s() .. ") on call")
             return method
         end
     end
@@ -320,8 +322,8 @@ Scanner.new = function(s)
                     level = level - 1
                 end
                 index = index + 1
-                if index > string:len() then
-                    index = string:len()
+                if index > string:len()+1 then
+                    index = string:len()+1
                     break
                 end
             end
@@ -381,7 +383,7 @@ Scanner.new = function(s)
         end
     end
 
-    debug("created scanner with string " .. string)
+    debug("created scanner with string '" .. string .. "'")
     methods.scan()
 
     return methods
@@ -526,7 +528,7 @@ Parser.new = function(s)
             scanner.scan()
             return Lookup.new(Self.new(), ident)
         else
-            raise_VeloSyntaxError("unexpected '#{@scanner.text}'")
+            raise_VeloSyntaxError("unexpected '" .. scanner.text() .. "'")
         end
     end
 
@@ -680,7 +682,8 @@ Object.set('if', VeloMethod.new('if', function(obj, args)
     debug(tostring(args))
     local method = nil
     local choice = 2
-    if #(args[1].contents) == 0 then
+    local cont = args[1].contents()
+    if #cont == 0 then
         choice = 3
     end
     method = args[choice].lookup 'create'
@@ -691,12 +694,13 @@ String = VeloObject.new 'String'
 
 String.set('concat', VeloMethod.new('concat', function(obj, args)
   debug "concat #{obj} #{args[0]}"
-  return make_string_literal(obj.contents + args[0].contents)
+  return make_string_literal(obj.contents() .. args[1].contents())
 end))
 
 String.set('create', VeloMethod.new('class', function(obj, args)
   local p = Parser.new(obj.contents())
   local s = p.script()
+  debug("create! " .. obj.to_s())-- .. ", " .. args[1].to_s())
   s.eval(args[1], {})
   return args[1]
 end))
@@ -722,7 +726,7 @@ end))
 
 IO = VeloObject.new 'IO'
 IO.set('print', VeloMethod.new('print', function(obj, args)
-    print(args[1].contents)
+    print(args[1].contents())
 end))
 
 Object.set('Object', Object)
@@ -748,12 +752,10 @@ end
 
 --[[ ================== MAIN =============== ]]--
 
-local f = io.open(arg[1], "rb")
 text = ""
-for line in io.lines(file) do
-    text = text + line
+for line in io.lines(arg[1]) do
+    text = text .. line
 end
-f:close()
 
 local p = Parser.new(text)
 local s = p.script()

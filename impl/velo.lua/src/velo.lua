@@ -192,6 +192,26 @@ local m = MethodCall.new(Self.new(), {Argument.new(1), StringLiteral.new("jonker
 local a = Assignment.new(m, "bar", Lookup.new(Self.new(), "foo"))
 s = Script.new({a, Self.new()}); print(s:to_s())
 
+function isdigit(s)
+    return string.find("0123456789", s, 1, true) ~= nil
+end
+
+function islower(s)
+    return string.find("abcdefghijklmnopqrstuvwxyz", s, 1, true) ~= nil
+end
+
+function isupper(s)
+    return string.find("ABCDEFGHIJKLMNOPQRSTUVWXYZ", s, 1, true) ~= nil
+end
+
+function isalpha(s)
+    return islower(s) or isupper(s)
+end
+
+function isalnum(s)
+    return isalpha(s) or isdigit(s)
+end
+
 --[[ ========== SCANNER ========= ]]--
 
 Scanner = {}
@@ -212,7 +232,7 @@ Scanner.new = function(s)
     methods.set_token = function(text, type)
         _text = text
         _type = type
-        debug "set_token '#{@text}' (#{@type})"
+        debug("set_token " .. text .. " (" .. type .. ")")
         --#debug "string now '#{@string}'"
     end
 
@@ -223,76 +243,87 @@ Scanner.new = function(s)
     end
 
     methods.scan_impl = function()
-      --[[
-        m = /\A[ \t]+/.match @string
-        if not m.nil?
-          @string = m.post_match
-          #debug "consumed whitespace, string now '#{@string}'"
+        -- discard leading whitespace
+        while string:sub(1,1) == " " or string:sub(1,1) == "\t" do
+            string = string:sub(2)
+            --debug "consumed whitespace, string now '#{@string}'"
         end
         
-        if @string.empty?
-          set_token('EOF', 'EOF')
-          return
+        if string == "" then
+            methods.set_token("EOF", "EOF")
+            return
         end
-        
-        m = /\A[\r\n;]+/.match @string
-        if not m.nil?
-          while not m.nil?
-            @string = m.post_match
-            m = /\A[ \t]*[\r\n;]+/.match @string
-          end
-          set_token('EOL', 'EOL')
-          return
-        end
-        
-        # check for any single character tokens
-        m = /\A([(),.;=])/.match @string
-        if m
-          @string = m.post_match
-          set_token(m[1], 'seperator')
-          return
-        end
-        
-        # check for arguments
-        m = /\A\#(\d+)/.match @string
-        if m
-          @string = m.post_match
-          set_token(m[1], 'arg')
-          return
-        end
-        
-        # check for strings of "word" characters
-        m = /\A(\w+)/.match @string
-        if m
-          @string = m.post_match
-          set_token(m[1], 'ident')
-          return
-        end
-        
-        # literal strings
-        if @string[0] == ?{
-          #debug "scanning strlit '#{@string}'"
-          index = 1
-          level = 1
-          while level > 0
-            if @string[index] == ?{
-              level += 1
-            elsif @string[index] == ?}
-              level -= 1
+
+        -- note: forget \r
+        local match = (string:sub(1,1) == "\n")
+        if match then
+            while match do
+                string = string:sub(2)
+                match = (string:sub(1,1) == "\n" or string:sub(1,1) == " " or string:sub(1,1) == "\t")
             end
-            index += 1
-            if index >= @string.length
-              index = @string.length
-              break
-            end
-          end
-          token = @string[1..index-2]
-          @string = @string[index..-1]
-          set_token(token, 'strlit')
-          return
+            methods.set_token("EOL", "EOL")
+            return
         end
-        ]]--
-        debug "scanner couldn't scan '#{@string}'"
+
+        -- check for any single character tokens
+        local c = string:sub(1,1)
+        local set = "(),.;="
+        if set:find(c, 1, true) ~= nil then
+            string = string:sub(2)
+            methods.set_token(c, "seperator")
+            return
+        end
+
+        -- check for arguments
+        if string:sub(1,1) == "#" then
+            local len = 0
+            while isdigit(string:sub(2+len,2+len)) do
+                len = len + 1
+            end
+            if len > 0 then
+               local argnum = string:sub(2, 2+len-1)
+               string = string:sub(2+len)
+               methods.set_token(argnum, "arg")
+               return
+            end
+        end
+
+        -- check for strings of "word" characters
+        if isalnum(string:sub(1,1)) then
+            local len = 0
+            while isalnum(string:sub(1+len,1+len)) do
+                len = len + 1
+            end
+            local word = string:sub(1, 1+len-1)
+            string = string:sub(1+len)
+            methods.set_token(word, "ident")
+            return
+        end
+
+        -- literal strings
+        if string:sub(1,1) == "{" then
+            -- debug "scanning strlit '#{@string}'"
+            local index = 2
+            local level = 1
+            while level > 0 do
+                if string:sub(index, index) == "{" then
+                    level = level + 1
+                elseif string:sub(index, index) == "}" then
+                    level = level - 1
+                end
+                index = index + 1
+                if index > string:len() then
+                    index = string:len()
+                    break
+                end
+            end
+            local token = string:sub(2,index-2)
+            string = string:sub(index)
+            methods.set_token(token, 'strlit')
+            return
+        end
+
+        debug("scanner couldn't scan '" .. string .. "'")
 
         methods.set_token('UNKNOWN', 'UNKNOWN')
     end
@@ -338,13 +369,13 @@ Scanner.new = function(s)
     end
 
     debug("created scanner with string " .. string)
-    -- AND WHOEVER CREATED THIS MUST CALL scan()
+    methods.scan()
 
     return methods
 end
 
-x = Scanner.new("the quick brown fox etc")
-x.scan()
+-- SANITY TEST
+x = Scanner.new(" \n  (.#53)  jonkers,031jon {sk}{str{ing}ity}w  ")
 while not x.is_eof() do
     print(x.text() .. ":" .. x.type())
     x.scan()

@@ -3,7 +3,7 @@
 --[[ ========== DEBUG ========= ]]--
 
 local debug = function(s)
-    print("--> (" .. s .. ")")
+    --print("--> (" .. s .. ")")
 end
 
 --[[ ========== EXCEPTIONS ========= ]]--
@@ -190,10 +190,12 @@ StringLiteral.new = function(text)
     return methods
 end
 
--- SANITY TEST
-local m = MethodCall.new(Self.new(), {Argument.new(1), StringLiteral.new("jonkers")})
-local a = Assignment.new(m, "bar", Lookup.new(Self.new(), "foo"))
-s = Script.new({a, Self.new()}); print(s.to_s())
+if sanity == true then
+    -- SANITY TEST
+    local m = MethodCall.new(Self.new(), {Argument.new(1), StringLiteral.new("jonkers")})
+    local a = Assignment.new(m, "bar", Lookup.new(Self.new(), "foo"))
+    s = Script.new({a, Self.new()}); print(s.to_s())
+end
 
 function isdigit(s)
     return string.find("0123456789", s, 1, true) ~= nil
@@ -385,14 +387,14 @@ Scanner.new = function(s)
     return methods
 end
 
--- SANITY TEST
---[[
-x = Scanner.new(" \n  (.#53)  jonkers,031jon {sk}{str{ing}ity}w  ")
-while not x.is_eof() do
-    print(x.text() .. ":" .. x.type())
-    x.scan()
+if sanity == true then
+    -- SANITY TEST
+    x = Scanner.new(" \n  (.#53)  jonkers,031jon {sk}{str{ing}ity}w  ")
+    while not x.is_eof() do
+        print(x.text() .. ":" .. x.type())
+        x.scan()
+    end
 end
-]]--
 
 --[[ ========== PARSER ========== ]]--
 
@@ -531,22 +533,24 @@ Parser.new = function(s)
     return methods
 end
 
--- SANITY TEST
-print(Parser.new('m a, m b, c').script().to_s())
-print(Parser.new('m a, (m b, c)').script().to_s())
-print(Parser.new('m a, (m b), c').script().to_s())
+if sanity == true then
+    -- SANITY TEST
+    print(Parser.new('m a, m b, c').script().to_s())
+    print(Parser.new('m a, (m b, c)').script().to_s())
+    print(Parser.new('m a, (m b), c').script().to_s())
+end
 
 --[[ ========== RUNTIME ========= ]]--
 
 --# the built-in objects, for convenience of other sources
-global_Object = nil
-global_String = nil
-global_IO = nil
+Object = nil
+String = nil
+IO = nil
 
 function make_string_literal(text)
     local o = VeloObject.new(text)
-    o.velo_extend(global_String)
-    o.contents = text
+    o.velo_extend(String)
+    o.set_contents(text)
     return o
 end
 
@@ -559,6 +563,7 @@ VeloMethod.new = function(title, fun)
     methods.class = "VeloMethod"
 
     methods.bind_object = function(obj)
+        debug("binding to " .. obj.to_s())
         _obj = obj
     end
 
@@ -569,6 +574,8 @@ VeloMethod.new = function(title, fun)
     methods.to_s = function()
         return "VeloMethod(" .. title .. ")"
     end
+
+    return methods
 end
 
 
@@ -576,8 +583,8 @@ end
 VeloObject = {}
 VeloObject.new = function(title)
     local parents = {}
-    if global_Object ~= nil then
-        parents[#parents+1] = global_Object
+    if Object ~= nil then
+        parents[#parents+1] = Object
     end
     local attrs = {}
     local contents = nil
@@ -589,7 +596,9 @@ VeloObject.new = function(title)
 
     methods.set = function(ident, obj)
         attrs[ident] = obj
-        debug "set #{ident} to #{obj} on #{self}"
+        if obj ~= nil then
+          debug("set " .. ident .. " to " .. obj.to_s() .. " on self")
+        end
     end
 
     --# let this object delegate to another object
@@ -607,123 +616,146 @@ VeloObject.new = function(title)
             raise_VeloAttributeNotFound("could not locate '#{ident}' on #{self}")
         end
         if result.class == "VeloMethod" then
-            debug "binding obtained method #{result} to object #{self}"
-            result.bind_object(self)
+            debug("binding obtained method " .. result.to_s() .. " to object #{self}")
+            result.bind_object(methods) -- self!!!
         end
         return result
     end
 
---[[
-  # look up an identifier on this object, or any of its delegates
-  def lookup_impl ident, trail
-    debug "lookup_impl #{ident} on #{self}"
-    if trail.include? self
-      debug "we've already seen this object, stopping search"
-      return nil
+    --# look up an identifier on this object, or any of its delegates
+    methods.lookup_impl = function(ident, trail)
+        debug "lookup_impl #{ident} on #{self}"
+        --[[
+        if trail.include? methods
+          debug "we've already seen this object, stopping search"
+          return nil
+        end
+        ]]--
+        trail[#trail+1] = methods
+        if attrs[ident] ~= nil then
+            debug("found here " .. methods.to_s() .. ", it's #{@attrs[ident]}")
+            return attrs[ident]
+        else
+            local x = nil
+            for i,parent in ipairs(parents) do
+                x = parent.lookup_impl(ident, trail)
+                if x ~= nil then
+                    break
+                end
+            end
+            return x
+        end
     end
-    trail.push self
-    if @attrs.has_key? ident
-      debug "found here (#{self}), it's #{@attrs[ident]}"
-      @attrs[ident]
-    else
-      x = nil
-      for parent in @parents
-        x = parent.lookup_impl ident, trail
-        break if not x.nil?
-      end
-      x
-    end
-  end
 
-  def contents
-    @contents
-  end
+    methods.contents = function()
+        return contents
+    end
   
-  def contents= c
-    @contents = c
-  end
-]]--
+    methods.set_contents = function(c)
+        contents = c
+    end
 
     return methods
 end
 
 --[[ -------------- objectbase ----------- ]]--
 
-global_Object = VeloObject.new('Object')
-global_Object.set('extend', VeloMethod.new('extend', function(obj, args)
-    obj.velo_extend(args[0])
+Object = VeloObject.new 'Object'
+Object.set('extend', VeloMethod.new('extend', function(obj, args)
+    return obj.velo_extend(args[0])
 end))
 
---[[
-$Object.set 'self', VeloMethod.new('self', proc { |obj, args|
-  obj
-})
-$Object.set 'new', VeloMethod.new('new', proc { |obj, args|
-  o = VeloObject.new 'new'
-  if not args[0].nil?
-    o.velo_extend args[0]
-  end
-  o
-})
-$Object.set 'if', VeloMethod.new('if', proc { |obj, args|
-  debug args
-  method = nil
-  choice = args[0].contents.empty? ? 2 : 1
-  method = args[choice].lookup 'create'
-  method.run [obj]
-})
+Object.set('self', VeloMethod.new('self', function(obj, args)
+    return obj
+end))
+Object.set('new', VeloMethod.new('new', function(obj, args)
+    local o = VeloObject.new 'new'
+    if args[1] ~= nil then
+        o.velo_extend(args[1])
+    end
+    return o
+end))
 
-$String = VeloObject.new 'String'
-$String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
+Object.set('if', VeloMethod.new('if', function(obj, args)
+    debug(tostring(args))
+    local method = nil
+    local choice = 2
+    if #(args[1].contents) == 0 then
+        choice = 3
+    end
+    method = args[choice].lookup 'create'
+    method.run {obj}
+end))
+
+String = VeloObject.new 'String'
+
+String.set('concat', VeloMethod.new('concat', function(obj, args)
   debug "concat #{obj} #{args[0]}"
-  make_string_literal(obj.contents + args[0].contents)
-})
-$String.set 'create', VeloMethod.new('class', proc { |obj, args|
-  p = Parser.new obj.contents
-  s = p.script
-  s.eval args[0], []
-  args[0]
-})
-$String.set 'method', VeloMethod.new('method', proc { |obj, args|
-  # obj is the string to turn into a method
-  debug "turning #{obj} into a method"
-  p = Parser.new obj.contents
-  s = p.script
-  VeloMethod.new('*created*', proc { |obj, args|
-    s.eval obj, args
-  })
-})
-$String.set 'equals', VeloMethod.new('equals', proc { |obj, args|
-  if obj.contents == args[0].contents
-    make_string_literal "true"
-  else
-    make_string_literal ""
-  end
-})
+  return make_string_literal(obj.contents + args[0].contents)
+end))
 
-$IO = VeloObject.new 'IO'
-$IO.set 'print', VeloMethod.new('print', proc { |obj, args|
-  puts args[0].contents
-})
+String.set('create', VeloMethod.new('class', function(obj, args)
+  local p = Parser.new(obj.contents())
+  local s = p.script()
+  s.eval(args[1], {})
+  return args[1]
+end))
 
-$Object.set 'Object', $Object
-$Object.set 'String', $String
-$Object.set 'IO', $IO
+String.set('method', VeloMethod.new('method', function(obj, args)
+    -- obj is the string to turn into a method
+    debug "turning #{obj} into a method"
+    local p = Parser.new(obj.contents())
+    local s = p.script()
+    return VeloMethod.new('*created*', function(obj, args)
+        return s.eval(obj, args)
+    end)
+end))
 
-### ... ###
+String.set('equals', VeloMethod.new('equals', function(obj, args)
+    if obj.contents() == args[1].contents() then
+        return make_string_literal("true")
+    else
+        return make_string_literal("")
+    end
+end))
 
-if $0 == __FILE__
-  $debug = true
-  $Object.set 'foo', VeloMethod.new('foo', proc { |obj, args|
-    puts "foo method called on #{obj} with args #{args}!"
-  })
-  $String.set 'bar', VeloMethod.new('bar', proc { |obj, args|
-    puts "bar method called on #{obj} with args #{args}!"
-  })
 
-  velo_Shimmy = VeloObject.new 'Shimmy'
-  velo_Shimmy.velo_extend $String
-  (velo_Shimmy.lookup 'bar').run [1,2,3]
+IO = VeloObject.new 'IO'
+IO.set('print', VeloMethod.new('print', function(obj, args)
+    print(args[1].contents)
+end))
+
+Object.set('Object', Object)
+Object.set('String', String)
+Object.set('IO', IO)
+
+
+if sanity == true then
+    -- SANITY TEST
+    Object.set('foo', VeloMethod.new('foo', function(obj, args)
+        print "foo method called on #{obj} with args #{args}!"
+    end))
+    String.set('bar', VeloMethod.new('bar', function(obj, args)
+        print "bar method called on #{obj} with args #{args}!"
+    end))
+    local Shimmer = VeloObject.new 'Shimmer'
+    print(String.to_s())
+    Shimmer.velo_extend(String)
+    local bar = Shimmer.lookup('bar')
+    print(bar.to_s())
+    bar.run {1,2,3}
 end
 
-]]--
+--[[ ================== MAIN =============== ]]--
+
+local f = io.open(arg[1], "rb")
+text = ""
+for line in io.lines(file) do
+    text = text + line
+end
+f:close()
+
+local p = Parser.new(text)
+local s = p.script()
+local o = VeloObject.new('main-script')
+s.eval(o, {})   -- XXX could pass command-line arguments here...

@@ -22,14 +22,6 @@ end
 
 --[[ =========== AST ========== ]]--
 
---[[
-class AST
-  def eval obj, args
-    # abstract
-  end
-end
-]]--
-
 Script = {}
 Script.new = function(exprs)
     local methods = {}
@@ -62,7 +54,7 @@ Assignment.new = function(object, field, expr)
         debug "eval #{self} on #{obj} with #{args}"
         local val = expr.eval(obj, args)
         local receiver = object.eval(obj, args)
-        debug "setting #{@field} on #{receiver}"
+        debug("setting " .. field .. " on " .. receiver.to_s() .. " to " .. val.to_s())
         receiver.set(field, val)
         return val
     end
@@ -611,11 +603,12 @@ VeloObject.new = function(title)
 
     --# look up an identifier on this object, or any of its delegates
     methods.lookup = function(ident)
-        debug "lookup #{ident} on #{self}"
+        debug("lookup " .. ident .. " on " .. methods.to_s())
         result = methods.lookup_impl(ident, {})
         debug "lookup result: #{result}"
         if result == nil then
-            raise_VeloAttributeNotFound("could not locate '#{ident}' on #{self}")
+            raise_VeloAttributeNotFound("could not locate " .. ident ..
+                                        " on " .. methods.to_s())
         end
         if result.class == "VeloMethod" then
             debug("binding obtained method " .. result.to_s() .. " to object #{self}")
@@ -626,7 +619,7 @@ VeloObject.new = function(title)
 
     --# look up an identifier on this object, or any of its delegates
     methods.lookup_impl = function(ident, trail)
-        debug "lookup_impl #{ident} on #{self}"
+        debug("lookup_impl " .. ident .. " on " .. methods.to_s())
         --[[
         if trail.include? methods
           debug "we've already seen this object, stopping search"
@@ -752,6 +745,12 @@ end
 
 --[[ ================== MAIN =============== ]]--
 
+local ast = false
+if arg[1] == "--ast" then
+    arg[1] = arg[2]
+    ast = true
+end
+
 text = ""
 for line in io.lines(arg[1]) do
     text = text .. line
@@ -759,5 +758,9 @@ end
 
 local p = Parser.new(text)
 local s = p.script()
-local o = VeloObject.new('main-script')
-s.eval(o, {})   -- XXX could pass command-line arguments here...
+if ast then
+    print(s.to_s())
+else
+    local o = VeloObject.new('main-script')
+    s.eval(o, {})   -- XXX could pass command-line arguments here...
+end

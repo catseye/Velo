@@ -3,7 +3,7 @@
 --[[ ========== DEBUG ========= ]]--
 
 local debug = function(s)
-    print("--> " .. s)
+    print("--> (" .. s .. ")")
 end
 
 --[[ ========== EXCEPTIONS ========= ]]--
@@ -32,13 +32,13 @@ end
 
 Script = {}
 Script.new = function(exprs)
-    methods = {}
+    local methods = {}
 
     methods.eval = function(obj, args)
         debug "eval #{self} on #{obj} with #{args}"
         local e = nil
         for i,expr in ipairs(exprs) do
-            e = expr:eval(obj, args)
+            e = expr.eval(obj, args)
         end
         return e
     end
@@ -56,14 +56,14 @@ end
 
 Assignment = {}
 Assignment.new = function(object, field, expr)
-    methods = {}
+    local methods = {}
 
     methods.eval = function(obj, args)
         debug "eval #{self} on #{obj} with #{args}"
-        local val = expr:eval(obj, args)
-        local receiver = object:eval(obj, args)
+        local val = expr.eval(obj, args)
+        local receiver = object.eval(obj, args)
         debug "setting #{@field} on #{receiver}"
-        receiver:set(field, val)
+        receiver.set(field, val)
         return val
     end
 
@@ -81,7 +81,7 @@ end
 
 Self = {}
 Self.new = function()
-    methods = {}
+    local methods = {}
 
     methods.eval = function(obj, args)
         debug "eval #{self} on #{obj} with #{args}"
@@ -97,7 +97,11 @@ end
 
 Lookup = {}
 Lookup.new = function(_receiver, _ident)
-    methods = {}
+    local methods = {}
+    methods.class = "Lookup"
+
+    debug(tostring(_receiver))
+    _receiver.foo = "hi"
 
     methods.receiver = function()
         return _receiver
@@ -109,34 +113,33 @@ Lookup.new = function(_receiver, _ident)
 
     methods.eval = function(obj, args)
         debug "eval #{self} on #{obj} with #{args}"
-        local receiver = _receiver:eval(obj, args)
-        return receiver:lookup(_ident)
+        local receiver = _receiver.eval(obj, args)
+        return receiver.lookup(_ident)
     end
 
     methods.to_s = function()
         return "Lookup(" .. _receiver.to_s() .. "," .. _ident .. ")"
     end
-    
+
     return methods
 end
 
 MethodCall = {}
 MethodCall.new = function(method_expr, exprs)
-    methods = {}
+    local methods = {}
 
     methods.eval = function(obj, args)
         debug "eval #{self} on #{obj} with #{args}"
         local new_args = {}
         for i,expr in ipairs(exprs) do
-            new_args.push(expr:eval(obj, args))
+            new_args.push(expr.eval(obj, args))
         end
-        local method = method_expr:eval(obj, args)
+        local method = method_expr.eval(obj, args)
         debug "arguments evaluated, now calling #{@method_expr} -> #{method}"
-        -- OOOH
-        if method.is_a_VeloMethod ~= nil then
+        if method.class == "VeloMethod" then
             --# xxx show receiver (method's bound object) in debug
             debug "running real method #{method} w/args #{args}"
-            return method:run(new_args)
+            return method.run(new_args)
         else
             debug "just returning non-method (#{method}) on call"
             return method
@@ -157,7 +160,7 @@ end
 Argument = {}
 Argument.new = function(num)
     num = num - 1
-    methods = {}
+    local methods = {}
 
     methods.eval = function(obj, args)
         debug "eval #{self} on #{obj} with #{args}"
@@ -173,7 +176,7 @@ end
 
 StringLiteral = {}
 StringLiteral.new = function(text)
-    methods = {}
+    local methods = {}
 
     methods.eval = function(obj, args)
         debug "eval #{self} on #{obj} with #{args}"
@@ -190,7 +193,7 @@ end
 -- SANITY TEST
 local m = MethodCall.new(Self.new(), {Argument.new(1), StringLiteral.new("jonkers")})
 local a = Assignment.new(m, "bar", Lookup.new(Self.new(), "foo"))
-s = Script.new({a, Self.new()}); print(s:to_s())
+s = Script.new({a, Self.new()}); print(s.to_s())
 
 function isdigit(s)
     return string.find("0123456789", s, 1, true) ~= nil
@@ -212,6 +215,10 @@ function isalnum(s)
     return isalpha(s) or isdigit(s)
 end
 
+function issep(s)
+    return string.find("(),.;=", s, 1, true) ~= nil
+end
+
 --[[ ========== SCANNER ========= ]]--
 
 Scanner = {}
@@ -220,7 +227,7 @@ Scanner.new = function(s)
     local _text = nil
     local _type = nil
 
-    methods = {}
+    local methods = {}
 
     methods.text = function() return _text end
     methods.type = function() return _type end
@@ -267,8 +274,7 @@ Scanner.new = function(s)
 
         -- check for any single character tokens
         local c = string:sub(1,1)
-        local set = "(),.;="
-        if set:find(c, 1, true) ~= nil then
+        if issep(c) then
             string = string:sub(2)
             methods.set_token(c, "seperator")
             return
@@ -277,7 +283,7 @@ Scanner.new = function(s)
         -- check for arguments
         if string:sub(1,1) == "#" then
             local len = 0
-            while isdigit(string:sub(2+len,2+len)) do
+            while isdigit(string:sub(2+len,2+len)) and len <= string:len() do
                 len = len + 1
             end
             if len > 0 then
@@ -291,7 +297,7 @@ Scanner.new = function(s)
         -- check for strings of "word" characters
         if isalnum(string:sub(1,1)) then
             local len = 0
-            while isalnum(string:sub(1+len,1+len)) do
+            while isalnum(string:sub(1+len,1+len)) and len <= string:len() do
                 len = len + 1
             end
             local word = string:sub(1, 1+len-1)
@@ -327,7 +333,7 @@ Scanner.new = function(s)
 
         methods.set_token('UNKNOWN', 'UNKNOWN')
     end
-    
+
     methods.consume = function(s)
         if _text == s then
             methods.scan()
@@ -364,7 +370,12 @@ Scanner.new = function(s)
             end
         end
         if not good then
-            raise_VeloSyntaxError("expected '#{t}', found '#{@text}' (#{@type})")
+            local tstring = ""
+            for i,v in ipairs(types) do
+                tstring = tstring .. v .. ","
+            end
+            raise_VeloSyntaxError("expected '" .. tstring .. "', found '" ..
+                                  _text .. "' (" .. _type .. ")")
         end
     end
 
@@ -375,11 +386,13 @@ Scanner.new = function(s)
 end
 
 -- SANITY TEST
+--[[
 x = Scanner.new(" \n  (.#53)  jonkers,031jon {sk}{str{ing}ity}w  ")
 while not x.is_eof() do
     print(x.text() .. ":" .. x.type())
     x.scan()
 end
+]]--
 
 --[[ ========== PARSER ========== ]]--
 
@@ -406,125 +419,122 @@ end
 #        | "(" [EOL] Expr ")"
 #        .
 
-class Parser
-  def initialize s
-    @scanner = Scanner.new(s)
-  end
-
-  def script
-    debug "parsing Script production"
-    exprs = []
-    @scanner.consume_type "EOL"
-    e = expr
-    while not e.nil?
-      @scanner.expect_types ["EOL", "EOF"]
-      exprs.push(e)
-      @scanner.consume_type "EOL"
-      e = expr
-    end
-    Script.new(exprs)
-  end
-
-  def expr
-    debug "parsing Expr production"
-    if (['EOL', 'EOF'].include? @scanner.type or [')', ','].include? @scanner.text)
-      return nil
-    end
-    receiver = base  # could be Expr, StringLit, Arg
-    if (['EOL', 'EOF'].include? @scanner.type or [')', ','].include? @scanner.text)
-      return MethodCall.new(receiver, [])
-    end
-    while @scanner.consume '.'
-      @scanner.consume_type 'EOL'
-      debug "parsing .ident"
-      ident = @scanner.text
-      @scanner.scan
-      receiver = Lookup.new(MethodCall.new(receiver, []), ident)
-    end
-    if @scanner.consume '='
-      # this is an assignment, so we must resolve the reciever chain
-      # as follows: a.b.c = foo becomes
-      # lookup(a, b).set(c, foo)
-      debug "unlookuping"
-      ident = nil
-      if receiver.is_a? Lookup
-        ident = receiver.ident
-        receiver = receiver.receiver
-      else
-        raise VeloSyntaxError, "assignment requires lvalue, but we have '#{@receiver}'"
-      end
-      debug "parsing assignment"
-      @scanner.consume_type 'EOL'
-      e = expr
-      return Assignment.new(receiver, ident, e)
-    elsif @scanner.type == 'EOF' or @scanner.type == 'EOL'
-      # this is a plain value, so we must resolve the reciever chain
-      # as follows: a.b.c becomes
-      # lookup(lookup(a, b), c)
-      debug "not a method call"
-      return MethodCall.new(receiver, [])
-    else
-      # this is a method call, so we must resolve the reciever chain
-      # as follows: a.b.c args becomes
-      # methodcall(lookup(lookup(a, b), c), args)
-      debug "parsing method call args"
-      args = []
-      e = expr
-      args.push(e) unless e.nil?
-      while @scanner.consume ","
-        @scanner.consume_type 'EOL'
-        e = expr
-        args.push(e) unless e.nil?
-      end
-      MethodCall.new(receiver, args)
-    end
-  end
-
-  def base
-    debug "parsing Base production"
-    if @scanner.consume "("
-      debug "parsing parens"
-      @scanner.consume_type 'EOL'
-      e = expr
-      @scanner.expect ")"
-      return e
-    elsif @scanner.type == 'strlit'
-      debug "parsing strlit"
-      s = @scanner.text
-      @scanner.scan
-      return StringLiteral.new(s)
-    elsif @scanner.type == 'arg'
-      debug "parsing arg"
-      num = @scanner.text.to_i
-      @scanner.scan
-      return Argument.new(num)
-    elsif @scanner.type == 'ident'
-      debug "parsing ident"
-      ident = @scanner.text
-      @scanner.scan
-      return Lookup.new(Self.new, ident)
-    else
-      raise VeloSyntaxError, "unexpected '#{@scanner.text}'"
-    end
-  end
-end
-
-if $0 == __FILE__
-  #$debug = true
-  p = Parser.new(ARGV[0])
-  s = p.script
-  puts s
-
-  if $debug
-    s1 = Parser.new('m a, m b, c').script
-    s2 = Parser.new('m a, (m b, c)').script
-    s3 = Parser.new('m a, (m b), c').script
-    puts s1
-    puts s2
-    puts s3
-  end
-end
 ]]--
+
+Parser = {}
+Parser.new = function(s)
+    local scanner = Scanner.new(s)
+    
+    local methods = {}
+    
+    methods.script = function()
+        debug "parsing Script production"
+        local exprs = {}
+        scanner.consume_type "EOL"
+        local e = methods.expr()
+        while e ~= nil do
+            scanner.expect_types {"EOL", "EOF"}
+            exprs[#exprs+1] = e
+            scanner.consume_type "EOL"
+            e = methods.expr()
+        end
+        return Script.new(exprs)
+    end
+
+    methods.expr = function()
+        debug "parsing Expr production"
+        if (scanner.type() == "EOL" or scanner.type() == "EOF" or
+            scanner.text() == ")" or scanner.text() == ",") then
+            return nil
+        end
+        local receiver = methods.base()  --# could be Expr, StringLit, Arg
+        if (scanner.type() == "EOL" or scanner.type() == "EOF" or
+            scanner.text() == ")" or scanner.text() == ",") then
+            return MethodCall.new(receiver, {})
+        end
+        while scanner.consume '.' do
+            scanner.consume_type 'EOL'
+            debug "parsing .ident"
+            ident = scanner.text()
+            scanner.scan()
+            receiver = Lookup.new(MethodCall.new(receiver, {}), ident)
+        end
+        if scanner.consume '=' then
+            -- this is an assignment, so we must resolve the reciever chain
+            -- as follows: a.b.c = foo becomes lookup(a, b).set(c, foo)
+            debug "unlookuping"
+            local ident = nil
+            if receiver.class == "Lookup" ~= nil then
+                ident = receiver.ident()
+                receiver = receiver.receiver()
+            else
+                raise_VeloSyntaxError("assignment requires lvalue, but we have '#{@receiver}'")
+            end
+            debug "parsing assignment"
+            scanner.consume_type 'EOL'
+            e = methods.expr()
+            return Assignment.new(receiver, ident, e)
+        elseif scanner.type() == 'EOF' or scanner.type() == 'EOL' then
+            -- this is a plain value, so we must resolve the reciever chain
+            -- as follows: a.b.c becomes lookup(lookup(a, b), c)
+            debug "not a method call"
+            return MethodCall.new(receiver, {})
+        else
+            -- this is a method call, so we must resolve the reciever chain
+            -- as follows: a.b.c args becomes
+            -- methodcall(lookup(lookup(a, b), c), args)
+            debug "parsing method call args"
+            local args = {}
+            local e = methods.expr()
+            if e ~= nil then
+                args[#args+1] = e
+            end
+            while scanner.consume "," do
+                scanner.consume_type 'EOL'
+                e = methods.expr()
+                if e ~= nil then
+                    args[#args+1] = e
+                end
+            end
+            return MethodCall.new(receiver, args)
+        end
+    end
+
+    methods.base = function()
+        debug "parsing Base production"
+        if scanner.consume "(" then
+            debug "parsing parens"
+            scanner.consume_type "EOL"
+            e = methods.expr()
+            scanner.expect ")"
+            return e
+        elseif scanner.type() == "strlit" then
+            debug "parsing strlit"
+            s = scanner.text()
+            scanner.scan()
+            return StringLiteral.new(s)
+        elseif scanner.type() == "arg" then
+            debug "parsing arg"
+            num = scanner.text().to_i()
+            scanner.scan()
+            return Argument.new(num)
+        elseif scanner.type() == "ident" then
+            debug "parsing ident"
+            ident = scanner.text()
+            scanner.scan()
+            return Lookup.new(Self.new(), ident)
+        else
+            raise_VeloSyntaxError("unexpected '#{@scanner.text}'")
+        end
+    end
+
+    return methods
+end
+
+-- SANITY TEST
+print(Parser.new('m a, m b, c').script().to_s())
+print(Parser.new('m a, (m b, c)').script().to_s())
+print(Parser.new('m a, (m b), c').script().to_s())
 
 --[[ ========== RUNTIME ========= ]]--
 

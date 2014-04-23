@@ -261,12 +261,12 @@ Scanner.new = function(s)
             return
         end
 
-        -- note: forget \r
-        local match = (string:sub(1,1) == "\n")
+        local match = (string:sub(1,1) == "\n" or string:sub(1,1) == "\r")
         if match then
             while match do
                 string = string:sub(2)
-                match = (string:sub(1,1) == "\n" or string:sub(1,1) == " " or string:sub(1,1) == "\t")
+                match = (string:sub(1,1) == "\n" or string:sub(1,1) == "\r" or
+                         string:sub(1,1) == " " or string:sub(1,1) == "\t")
             end
             methods.set_token("EOL", "EOL")
             return
@@ -543,69 +543,77 @@ global_Object = nil
 global_String = nil
 global_IO = nil
 
---[[
-
-# title is for debugging only.  methods themselves do not have names.
-class VeloMethod
-  def initialize title, fun
-    @title = title
-    @fun = fun
-    @obj = nil
-  end
-
-  def bind_object obj
-    @obj = obj
-  end
-
-  def run args
-    @fun.call @obj, args
-  end
-  
-  def to_s
-    "VeloMethod(#{@title})"
-  end
+function make_string_literal(text)
+    local o = VeloObject.new(text)
+    o.velo_extend(global_String)
+    o.contents = text
+    return o
 end
 
-# parents will be [] for Object, [Object] for all other objects
-class VeloObject
-  def initialize title
-    @title = title
-    @parents = []
-    @parents.push $Object if not $Object.nil?
-    @attrs = {}
-    @contents = nil
-  end
+-- title is for debugging only.  methods themselves do not have names.
+VeloMethod = {}
+VeloMethod.new = function(title, fun)
+    local _obj = nil
+    
+    local methods = {}
+    methods.class = "VeloMethod"
 
-  def to_s
-    "VeloObject('#{@title}')"
-  end
-
-  def set ident, obj
-    @attrs[ident] = obj
-    debug "set #{ident} to #{obj} on #{self}"
-  end
-
-  # let this object delegate to another object
-  def velo_extend obj
-    debug "extending #{self} w/#{obj}"
-    @parents.unshift obj
-  end
-
-  # look up an identifier on this object, or any of its delegates
-  def lookup ident
-    debug "lookup #{ident} on #{self}"
-    result = lookup_impl ident, []
-    debug "lookup result: #{result}"
-    if result.nil?
-      raise VeloAttributeNotFound, "could not locate '#{ident}' on #{self}"
+    methods.bind_object = function(obj)
+        _obj = obj
     end
-    if result.is_a? VeloMethod
-      debug "binding obtained method #{result} to object #{self}"
-      result.bind_object self
-    end
-    result
-  end
 
+    methods.run = function(args)
+        fun(_obj, args)
+    end
+
+    methods.to_s = function()
+        return "VeloMethod(" .. title .. ")"
+    end
+end
+
+
+--# parents will be [] for Object, [Object] for all other objects
+VeloObject = {}
+VeloObject.new = function(title)
+    local parents = {}
+    if global_Object ~= nil then
+        parents[#parents+1] = global_Object
+    end
+    local attrs = {}
+    local contents = nil
+    local methods = {}
+
+    methods.to_s = function()
+        return "VeloObject(" .. title .. ")"
+    end
+
+    methods.set = function(ident, obj)
+        attrs[ident] = obj
+        debug "set #{ident} to #{obj} on #{self}"
+    end
+
+    --# let this object delegate to another object
+    methods.velo_extend = function(obj)
+        debug "extending #{self} w/#{obj}"
+        table.insert(parents, 1, obj)
+    end
+
+    --# look up an identifier on this object, or any of its delegates
+    methods.lookup = function(ident)
+        debug "lookup #{ident} on #{self}"
+        result = methods.lookup_impl(ident, {})
+        debug "lookup result: #{result}"
+        if result == nil then
+            raise_VeloAttributeNotFound("could not locate '#{ident}' on #{self}")
+        end
+        if result.class == "VeloMethod" then
+            debug "binding obtained method #{result} to object #{self}"
+            result.bind_object(self)
+        end
+        return result
+    end
+
+--[[
   # look up an identifier on this object, or any of its delegates
   def lookup_impl ident, trail
     debug "lookup_impl #{ident} on #{self}"
@@ -634,21 +642,19 @@ class VeloObject
   def contents= c
     @contents = c
   end
+]]--
+
+    return methods
 end
 
-def make_string_literal text
-  o = VeloObject.new "#{@text}"
-  o.velo_extend $String
-  o.contents = text
-  o
-end
-  
-### establish the objectbase ###
+--[[ -------------- objectbase ----------- ]]--
 
-$Object = VeloObject.new 'Object'
-$Object.set 'extend', VeloMethod.new('extend', proc { |obj, args|
-  obj.velo_extend args[0]
-})
+global_Object = VeloObject.new('Object')
+global_Object.set('extend', VeloMethod.new('extend', function(obj, args)
+    obj.velo_extend(args[0])
+end))
+
+--[[
 $Object.set 'self', VeloMethod.new('self', proc { |obj, args|
   obj
 })

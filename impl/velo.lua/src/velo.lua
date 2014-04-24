@@ -524,7 +524,7 @@ Parser.new = function(s)
             return StringLiteral.new(s)
         elseif scanner.type() == "arg" then
             debug "parsing arg"
-            num = scanner.text().to_i()
+            num = tonumber(scanner.text())
             scanner.scan()
             return Argument.new(num)
         elseif scanner.type() == "ident" then
@@ -670,7 +670,7 @@ end
 
 Object = VeloObject.new 'Object'
 Object.set('extend', VeloMethod.new('extend', function(obj, args)
-    return obj.velo_extend(args[0])
+    return obj.velo_extend(args[1])
 end))
 
 Object.set('self', VeloMethod.new('self', function(obj, args)

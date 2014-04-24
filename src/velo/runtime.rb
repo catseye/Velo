@@ -141,6 +141,7 @@ $String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
 $String.set 'create', VeloMethod.new('create', proc { |obj, args|
   p = Parser.new obj.contents
   s = p.script
+  debug "create! #{s} #{args[0]} arg count #{args.length}"
   s.eval args[0], []
   args[0]
 })

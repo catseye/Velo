@@ -115,7 +115,7 @@ Lookup.new = function(_receiver, _ident)
     end
 
     methods.to_s = function()
-        return "Lookup(" .. _receiver.to_s() .. "," .. _ident .. ")"
+        return "Lookup(" .. _receiver.to_s() .. ",'" .. _ident .. "')"
     end
 
     return methods
@@ -126,7 +126,7 @@ MethodCall.new = function(method_expr, exprs)
     local methods = {}
 
     methods.eval = function(obj, args)
-        debug("eval #{self} on " .. obj.to_s() .. " with #{args}")
+        debug("eval " .. methods.to_s() .. " on " .. obj.to_s() .. " with " .. #args .. " args")
         local new_args = {}
         for i,expr in ipairs(exprs) do
             new_args[#new_args+1] = expr.eval(obj, args)
@@ -137,7 +137,7 @@ MethodCall.new = function(method_expr, exprs)
                method_expr.to_s() .. " -> " .. method.to_s())
         if method.class == "VeloMethod" then
             --# xxx show receiver (method's bound object) in debug
-            debug "running real method #{method} w/args #{args}"
+            debug("running real method " .. method.to_s() .. " w/arg count " .. #args)
             return method.run(new_args)
         else
             debug("just returning non-method (" .. method.to_s() .. ") on call")
@@ -183,7 +183,7 @@ StringLiteral.new = function(text)
     end
 
     methods.to_s = function()
-        return "StringLiteral(" .. text .. ")"
+        return "StringLiteral('" .. text .. "')"
     end
     
     return methods
@@ -575,7 +575,7 @@ VeloMethod.new = function(title, fun)
     end
 
     methods.run = function(args)
-        fun(_obj, args)
+        return fun(_obj, args)
     end
 
     methods.to_s = function()
@@ -641,7 +641,7 @@ VeloObject.new = function(title)
         ]]--
         trail[#trail+1] = methods
         if attrs[ident] ~= nil then
-            debug("found here " .. methods.to_s() .. ", it's #{@attrs[ident]}")
+            debug("found here " .. methods.to_s() .. ", it's " .. attrs[ident].to_s())
             return attrs[ident]
         else
             local x = nil
@@ -699,16 +699,16 @@ end))
 String = VeloObject.new 'String'
 
 String.set('concat', VeloMethod.new('concat', function(obj, args)
-  debug "concat #{obj} #{args[0]}"
-  return make_string_literal(obj.contents() .. args[1].contents())
+    debug("concat " .. obj.to_s())-- .. ", " .. args[1].to_s())
+    return make_string_literal(obj.contents() .. args[1].contents())
 end))
 
 String.set('create', VeloMethod.new('create', function(obj, args)
-  local p = Parser.new(obj.contents())
-  local s = p.script()
-  debug("create! " .. obj.to_s())-- .. ", " .. args[1].to_s())
-  s.eval(args[1], {})
-  return args[1]
+    local p = Parser.new(obj.contents())
+    local s = p.script()
+    debug("create! " .. obj.to_s())-- .. ", " .. args[1].to_s())
+    s.eval(args[1], {})
+    return args[1]
 end))
 
 String.set('method', VeloMethod.new('method', function(obj, args)
@@ -775,7 +775,7 @@ while #arg > 0 do
 
         local p = Parser.new(text)
         local s = p.script()
-        if ast then
+        if dump_ast then
             print(s.to_s())
         else
             local o = VeloObject.new('main-script')

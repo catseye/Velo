@@ -7,14 +7,18 @@ require 'velo/runtime'
 
 ############ Main ############
 
-ast = false
+dump_ast = false
 ARGV.each do |arg|
   if arg == '--debug'
     $debug = true
     next
   end
   if arg == '--ast'
-    ast = true
+    dump_ast = true
+    next
+  end
+  if arg == '--scan'
+    $debug_scan = true
     next
   end
   File.open(arg, 'r') do |f|
@@ -24,7 +28,7 @@ ARGV.each do |arg|
     end
     p = Parser.new(text)
     s = p.script
-    if ast
+    if dump_ast
       puts s
     else
       o = VeloObject.new 'main-script'

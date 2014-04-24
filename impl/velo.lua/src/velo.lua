@@ -2,8 +2,13 @@
 
 --[[ ========== DEBUG ========= ]]--
 
+local do_debug = false
+local debug_scan = false
+
 local debug = function(s)
-    --print("--> (" .. s .. ")")
+    if do_debug then
+        print("--> (" .. s .. ")")
+    end
 end
 
 --[[ ========== EXCEPTIONS ========= ]]--
@@ -215,6 +220,14 @@ function issep(s)
     return string.find("(),.;=", s, 1, true) ~= nil
 end
 
+function isspace(s)
+    return string.find(" \t", s, 1, true) ~= nil
+end
+
+function iseol(s)
+    return string.find("\n\r;", s, 1, true) ~= nil
+end
+
 --[[ ========== SCANNER ========= ]]--
 
 Scanner = {}
@@ -241,15 +254,16 @@ Scanner.new = function(s)
 
     methods.scan = function()
         methods.scan_impl()
-        debug("scanned " .. _text .. " (" .. _type .. ")")
+        if debug_scan then
+            print("scanned '" .. _text .. "' (" .. _type .. ")")
+        end
         return _text
     end
 
     methods.scan_impl = function()
         -- discard leading whitespace
-        while string:sub(1,1) == " " or string:sub(1,1) == "\t" do
+        while isspace(string:sub(1,1)) and string ~= "" do
             string = string:sub(2)
-            --debug "consumed whitespace, string now '#{@string}'"
         end
         
         if string == "" then
@@ -257,12 +271,11 @@ Scanner.new = function(s)
             return
         end
 
-        local match = (string:sub(1,1) == "\n" or string:sub(1,1) == "\r")
+        local match = iseol(string:sub(1,1))
         if match then
-            while match do
+            while match and string ~= "" do
                 string = string:sub(2)
-                match = (string:sub(1,1) == "\n" or string:sub(1,1) == "\r" or
-                         string:sub(1,1) == " " or string:sub(1,1) == "\t")
+                match = iseol(string:sub(1,1)) or isspace(string:sub(1,1))
             end
             methods.set_token("EOL", "EOL")
             return
@@ -745,22 +758,29 @@ end
 
 --[[ ================== MAIN =============== ]]--
 
-local ast = false
-if arg[1] == "--ast" then
-    arg[1] = arg[2]
-    ast = true
-end
+local dump_ast = false
 
-text = ""
-for line in io.lines(arg[1]) do
-    text = text .. line
-end
+while #arg > 0 do
+    if arg[1] == "--ast" then
+        dump_ast = true
+    elseif arg[1] == "--debug" then
+        do_debug = true
+    elseif arg[1] == "--scan" then
+        debug_scan = true
+    else
+        text = ""
+        for line in io.lines(arg[1]) do
+            text = text .. line .. "\n"
+        end
 
-local p = Parser.new(text)
-local s = p.script()
-if ast then
-    print(s.to_s())
-else
-    local o = VeloObject.new('main-script')
-    s.eval(o, {})   -- XXX could pass command-line arguments here...
+        local p = Parser.new(text)
+        local s = p.script()
+        if ast then
+            print(s.to_s())
+        else
+            local o = VeloObject.new('main-script')
+            s.eval(o, {})   -- XXX could pass command-line arguments here...
+        end
+    end
+    table.remove(arg, 1)
 end

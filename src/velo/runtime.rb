@@ -138,7 +138,7 @@ $String.set 'concat', VeloMethod.new('concat', proc { |obj, args|
   debug "concat #{obj} #{args[0]}"
   make_string_literal(obj.contents + args[0].contents)
 })
-$String.set 'create', VeloMethod.new('class', proc { |obj, args|
+$String.set 'create', VeloMethod.new('create', proc { |obj, args|
   p = Parser.new obj.contents
   s = p.script
   s.eval args[0], []

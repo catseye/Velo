@@ -703,7 +703,7 @@ String.set('concat', VeloMethod.new('concat', function(obj, args)
   return make_string_literal(obj.contents() .. args[1].contents())
 end))
 
-String.set('create', VeloMethod.new('class', function(obj, args)
+String.set('create', VeloMethod.new('create', function(obj, args)
   local p = Parser.new(obj.contents())
   local s = p.script()
   debug("create! " .. obj.to_s())-- .. ", " .. args[1].to_s())

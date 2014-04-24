@@ -158,7 +158,6 @@ end
 
 Argument = {}
 Argument.new = function(num)
-    num = num - 1
     local methods = {}
 
     methods.eval = function(obj, args)
@@ -604,7 +603,7 @@ VeloObject.new = function(title)
     methods.set = function(ident, obj)
         attrs[ident] = obj
         if obj ~= nil then
-          debug("set " .. ident .. " to " .. obj.to_s() .. " on self")
+            debug("set " .. ident .. " to " .. obj.to_s() .. " on self")
         end
     end
 
@@ -633,12 +632,12 @@ VeloObject.new = function(title)
     --# look up an identifier on this object, or any of its delegates
     methods.lookup_impl = function(ident, trail)
         debug("lookup_impl " .. ident .. " on " .. methods.to_s())
-        --[[
-        if trail.include? methods
-          debug "we've already seen this object, stopping search"
-          return nil
+        for i,candidate in ipairs(trail) do
+            if candidate == methods then
+                debug "we've already seen this object, stopping search"
+                return nil
+            end
         end
-        ]]--
         trail[#trail+1] = methods
         if attrs[ident] ~= nil then
             debug("found here " .. methods.to_s() .. ", it's " .. attrs[ident].to_s())

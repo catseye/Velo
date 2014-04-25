@@ -516,7 +516,7 @@ Summary of methods on `String`
 
 *   `if` STRING, STRING
 *   `while` STRING
-*   `class`
+*   `create`
 *   `method` STRING
 *   `concat` STRING
 *   `eval` STRING

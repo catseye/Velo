@@ -1,11 +1,14 @@
 #!/bin/sh
 
-cat >test_config <<EOF
-    -> Functionality "Interpret Velo Script" is implemented by shell command
-    -> "bin/velo %(test-file)"
-
-    -> Functionality "Interpret Velo Script" is implemented by shell command
-    -> "impl/velo.lua/src/velo.lua %(test-file)"
-EOF
-falderal test test_config README.markdown
-rm test_config
+FIXTURES=""
+if [ `which ruby`x != x ]; then
+    FIXTURES="$FIXTURES fixture/velo.rb.markdown"
+fi
+if [ `which lua`x != x ]; then
+    FIXTURES="$FIXTURES fixture/velo.lua.markdown"
+fi
+if [ "${FIXTURES}x" = x ]; then
+    echo "Neither ruby nor lua found on search path."
+    exit 1
+fi
+falderal $FIXTURES README.markdown

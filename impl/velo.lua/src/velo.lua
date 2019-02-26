@@ -1,5 +1,3 @@
-#!/usr/bin/env lua
-
 --[[ ========== DEBUG ========= ]]--
 
 local do_debug = false

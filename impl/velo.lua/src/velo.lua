@@ -430,9 +430,9 @@ end
 Parser = {}
 Parser.new = function(s)
     local scanner = Scanner.new(s)
-    
+
     local methods = {}
-    
+
     methods.script = function()
         debug "parsing Script production"
         local exprs = {}
@@ -727,9 +727,13 @@ String.set('equals', VeloMethod.new('equals', function(obj, args)
 end))
 
 
+veloPrint = function(s)
+    print(s)
+end
+
 IO = VeloObject.new 'IO'
 IO.set('print', VeloMethod.new('print', function(obj, args)
-    print(args[1].contents())
+    veloPrint(args[1].contents())
 end))
 
 Object.set('Object', Object)

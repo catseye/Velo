@@ -757,27 +757,33 @@ end
 
 local dump_ast = false
 
-while #arg > 0 do
-    if arg[1] == "--ast" then
-        dump_ast = true
-    elseif arg[1] == "--debug" then
-        do_debug = true
-    elseif arg[1] == "--scan" then
-        debug_scan = true
-    else
-        text = ""
-        for line in io.lines(arg[1]) do
-            text = text .. line .. "\n"
-        end
-
-        local p = Parser.new(text)
-        local s = p.script()
-        if dump_ast then
-            print(s.to_s())
+function main(arg)
+    while #arg > 0 do
+        if arg[1] == "--ast" then
+            dump_ast = true
+        elseif arg[1] == "--debug" then
+            do_debug = true
+        elseif arg[1] == "--scan" then
+            debug_scan = true
         else
-            local o = VeloObject.new('main-script')
-            s.eval(o, {})   -- XXX could pass command-line arguments here...
+            text = ""
+            for line in io.lines(arg[1]) do
+                text = text .. line .. "\n"
+            end
+
+            local p = Parser.new(text)
+            local s = p.script()
+            if dump_ast then
+                print(s.to_s())
+            else
+                local o = VeloObject.new('main-script')
+                s.eval(o, {})   -- XXX could pass command-line arguments here...
+            end
         end
+        table.remove(arg, 1)
     end
-    table.remove(arg, 1)
+end
+
+if arg ~= nil then
+    main(arg)
 end

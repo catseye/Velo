@@ -1,9 +1,9 @@
 function launch(config) {
   config.container.innerHTML = ('' +
     '<textarea id="editor" rows="10" cols="80">' +
-    'extend IO' +
-    'a = {Hello, world!}' +
-    'print a' +
+    'extend IO\n' +
+    'a = {Hello, world!}\n' +
+    'print a\n' +
     '</textarea>' +
     '<button onclick="run()">Run</button>' +
     '<pre id="output"></pre>');

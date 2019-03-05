@@ -1,4 +1,4 @@
-files = [
+examplePrograms = [
     [
         "class.velo", 
         "Jonkers = {\n  IO.print {Hello}\n}.create new\n"

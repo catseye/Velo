@@ -2,7 +2,9 @@
 <head>
   <meta charset="utf-8">
   <title>velo.lua (running under Fengari)</title>
-  <script src="https://catseye.tc/contrib/fengari-web-v0.1.4/fengari-web.js"></script>
+  <style>
+#installation-container { }
+  </style>
 </head>
 <body>
 
@@ -10,11 +12,15 @@
 
 <p>(velo.lua running under Fengari)</p>
 
-<div id="installation">
+<div id="installation-container">
+  <div id="installation">
+  </div>
 </div>
 
-<script type="application/lua" src="../src/velo.lua" async></script>
+<script src="https://catseye.tc/contrib/fengari-web-v0.1.4/fengari-web.js"></script>
+<script src="../../../eg/index.js"></script>
 <script src="velo-fengari-launcher.js"></script>
+<script type="application/lua" src="../src/velo.lua" async></script>
 <script>
   launch({ container: document.getElementById('installation') });
 </script>

@@ -1,4 +1,12 @@
 function launch(config) {
+  config.container.innerHTML = ('' +
+    '<textarea id="editor" rows="10" cols="80">' +
+    'extend IO' +
+    'a = {Hello, world!}' +
+    'print a' +
+    '</textarea>' +
+    '<button onclick="run()">Run</button>' +
+    '<pre id="output"></pre>');
 }
 
 function setUpPrint(elem) {

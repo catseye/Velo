@@ -10,20 +10,13 @@
 
 <p>(velo.lua running under Fengari)</p>
 
-<div>
-<textarea id="editor" rows="10" cols="80">
-extend IO
-a = {Hello, world!}
-print a
-</textarea>
+<div id="installation">
 </div>
-<button onclick="run()">Run</button>
-<pre id="output"></pre>
 
 <script type="application/lua" src="../src/velo.lua" async></script>
 <script src="velo-fengari-launcher.js"></script>
 <script>
-  launch();
+  launch({ container: document.getElementById('installation') });
 </script>
 
 </body>

@@ -30,6 +30,17 @@ function launch(config) {
     return select;
   };
 
+  function selectOptionByText(selectElem, text) {
+    var optElem;
+    for (var i = 0; optElem = selectElem.options[i]; i++) {
+      if (optElem.text === text) {
+        selectElem.selectedIndex = i;
+        selectElem.dispatchEvent(new Event('change'));
+        return;
+      }
+    }
+  }
+
   var controlPanel = document.getElementById('control-panel');
   var optionsArray = [];
   for (var i = 0; i < examplePrograms.length; i++) {
@@ -39,9 +50,10 @@ function launch(config) {
     });
   }
 
-  makeSelect(controlPanel, "example program:", optionsArray, function(option) {
+  var select = makeSelect(controlPanel, "example program:", optionsArray, function(option) {
     document.getElementById('editor').value = option.value;
   });
+  selectOptionByText(select, "hello-world.velo");
 }
 
 function setUpPrint(elem) {

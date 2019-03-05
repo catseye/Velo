@@ -1,0 +1,8 @@
+count = {
+  temp = #1
+  if (temp.equals {XXXXXX}), { IO.print {Done!}}, {
+    IO.print temp
+    count temp.concat {X}
+  }
+}.method
+count {X}

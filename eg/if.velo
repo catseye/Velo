@@ -1,2 +1,4 @@
-if ({X}.equals {Y}), {IO.print {Yes}}, {IO.print {No}}
-if ({X}.equals {X}), {IO.print {Yes}}, {IO.print {No}}
+yes = {IO.print {Yes}}
+no = {IO.print {No}}
+if ({X}.equals {Y}), yes, no
+if ({X}.equals {X}), yes, no

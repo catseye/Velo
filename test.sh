@@ -1,14 +1,14 @@
 #!/bin/sh
 
-FIXTURES=""
+APPLIANCES=""
 if [ `which ruby`x != x ]; then
-    FIXTURES="$FIXTURES fixture/velo.rb.markdown"
+    APPLIANCES="$APPLIANCES tests/appliances/velo.rb.md"
 fi
 if [ `which lua`x != x ]; then
-    FIXTURES="$FIXTURES fixture/velo.lua.markdown"
+    APPLIANCES="$APPLIANCES tests/appliances/velo.lua.md"
 fi
-if [ "${FIXTURES}x" = x ]; then
+if [ "${APPLIANCES}x" = x ]; then
     echo "Neither ruby nor lua found on search path."
     exit 1
 fi
-falderal $FIXTURES README.markdown
+falderal $APPLIANCES README.markdown

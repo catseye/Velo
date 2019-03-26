@@ -18,8 +18,8 @@ function launch(config) {
     var select = document.createElement("select");
     for (var i = 0; i < optionsArray.length; i++) {
       var op = document.createElement("option");
-      op.value = optionsArray[i].value;
-      op.text = optionsArray[i].text;
+      op.text = optionsArray[i].filename;
+      op.value = optionsArray[i].contents;
       select.options.add(op);
     }
     select.onchange = function(e) {
@@ -42,16 +42,8 @@ function launch(config) {
   }
 
   var controlPanel = document.getElementById('control-panel');
-  var optionsArray = [];
-  for (var i = 0; i < examplePrograms.length; i++) {
-    optionsArray.push({
-      value: examplePrograms[i][1],
-      text: examplePrograms[i][0]
-    });
-  }
-
-  var select = makeSelect(controlPanel, "example program:", optionsArray, function(option) {
-    document.getElementById('editor').value = option.value;
+  var select = makeSelect(controlPanel, "example program:", examplePrograms, function(option) {
+    document.getElementById('editor').value = option.contents;
   });
   selectOptionByText(select, "hello-world.velo");
 }

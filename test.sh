@@ -11,4 +11,4 @@ if [ "${APPLIANCES}x" = x ]; then
     echo "Neither ruby nor lua found on search path."
     exit 1
 fi
-falderal $APPLIANCES README.markdown
+falderal $APPLIANCES README.md

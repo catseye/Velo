@@ -1,5 +1,5 @@
-velo.lua
-========
+`velo.lua`
+==========
 
 This directory contains an implementation of Velo in Lua 5.1,
 called `velo.lua`.  Its source resides in the `src` subdirectory.
@@ -9,9 +9,9 @@ web browser, under [Fengari][], in the `demo` subdirectory.
 
 In order to for this demonstration to work locally, you'll need
 to run a local webserver from the *root* directory of this
-repository.  For example, if you have Python installed,
+repository.  For example, if you have Python 3 installed,
 
-    python -m SimpleHTTPServer
+    python3 -m http.server
 
 Then open
 

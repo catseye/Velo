@@ -770,10 +770,9 @@ function main(arg)
         elseif arg[1] == "--scan" then
             debug_scan = true
         else
-            text = ""
-            for line in io.lines(arg[1]) do
-                text = text .. line .. "\n"
-            end
+            local f = assert(io.open(arg[1], "r"))
+            local text = f:read("*all")
+            f:close()
 
             local p = Parser.new(text)
             local s = p.script()

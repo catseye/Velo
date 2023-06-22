@@ -186,13 +186,6 @@ StringLiteral.new = function(text)
     return methods
 end
 
-if sanity == true then
-    -- SANITY TEST
-    local m = MethodCall.new(Self.new(), {Argument.new(1), StringLiteral.new("jonkers")})
-    local a = Assignment.new(m, "bar", Lookup.new(Self.new(), "foo"))
-    s = Script.new({a, Self.new()}); print(s.to_s())
-end
-
 function isdigit(s)
     return string.find("0123456789", s, 1, true) ~= nil
 end
@@ -391,15 +384,6 @@ Scanner.new = function(s)
     return methods
 end
 
-if sanity == true then
-    -- SANITY TEST
-    x = Scanner.new(" \n  (.#53)  jonkers,031jon {sk}{str{ing}ity}w  ")
-    while not x.is_eof() do
-        print(x.text() .. ":" .. x.type())
-        x.scan()
-    end
-end
-
 --[[ ========== PARSER ========== ]]--
 
 --[[
@@ -535,13 +519,6 @@ Parser.new = function(s)
     end
 
     return methods
-end
-
-if sanity == true then
-    -- SANITY TEST
-    print(Parser.new('m a, m b, c').script().to_s())
-    print(Parser.new('m a, (m b, c)').script().to_s())
-    print(Parser.new('m a, (m b), c').script().to_s())
 end
 
 --[[ ========== RUNTIME ========= ]]--
@@ -740,22 +717,6 @@ Object.set('Object', Object)
 Object.set('String', String)
 Object.set('IO', IO)
 
-
-if sanity == true then
-    -- SANITY TEST
-    Object.set('foo', VeloMethod.new('foo', function(obj, args)
-        print "foo method called on #{obj} with args #{args}!"
-    end))
-    String.set('bar', VeloMethod.new('bar', function(obj, args)
-        print "bar method called on #{obj} with args #{args}!"
-    end))
-    local Shimmer = VeloObject.new 'Shimmer'
-    print(String.to_s())
-    Shimmer.velo_extend(String)
-    local bar = Shimmer.lookup('bar')
-    print(bar.to_s())
-    bar.run {1,2,3}
-end
 
 --[[ ================== MAIN =============== ]]--
 
